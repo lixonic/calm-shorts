@@ -1,0 +1,25 @@
+name: calm_reels
+description: An offline, shuffled round-robin video viewer.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  video_player: 2.14.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  video_player_platform_interface: 6.9.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/library.json
+    - assets/videos/
+    - assets/posters/

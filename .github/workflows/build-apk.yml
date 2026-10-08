@@ -1,0 +1,225 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.0'
+
+jobs:
+  apk:
+    name: Check and build offline APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out app and bundled videos
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install media inspection tools
+        run: |
+          if ! command -v ffprobe > /dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+
+      - name: Verify bundled videos and posters
+        run: python3 tools/prepare_media.py --verify-bundle
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle.kts
+            android/gradle/wrapper/gradle-wrapper.properties
+            android/gradle.properties
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Select Java for Flutter Android builds
+        run: flutter config --jdk-dir "$JAVA_HOME"
+
+      - name: Accept Android SDK licenses
+        run: |
+          # sdkmanager's result determines failure; yes may exit after its pipe closes.
+          set +o pipefail
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          set -o pipefail
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze app
+        run: flutter analyze
+
+      - name: Test app
+        run: flutter test
+
+      - name: Configure signing for trusted builds
+        if: github.event_name != 'pull_request'
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          names = (
+              'ANDROID_KEYSTORE_BASE64',
+              'ANDROID_KEYSTORE_PASSWORD',
+              'ANDROID_KEY_ALIAS',
+              'ANDROID_KEY_PASSWORD',
+          )
+          values = [os.environ.get(name, '') for name in names]
+          provided = [bool(value) for value in values]
+          if any(provided) and not all(provided):
+              raise SystemExit('Provide all four ANDROID signing secrets, or remove all four for a personal test APK.')
+
+          mode = 'personal'
+          if all(provided):
+              encoded, store_password, alias, key_password = values
+              key = Path('android/calm-reels-upload.jks')
+              key.write_bytes(base64.b64decode(''.join(encoded.split()), validate=True))
+              key.chmod(0o600)
+
+              def escape_property(value):
+                  # Java Properties uses ISO-8859-1 and UTF-16 Unicode escapes.
+                  result = []
+                  encoded_value = value.encode('utf-16-be')
+                  for index in range(0, len(encoded_value), 2):
+                      unit = int.from_bytes(encoded_value[index:index + 2], 'big')
+                      char = chr(unit)
+                      if unit < 0x20 or unit >= 0x7f:
+                          result.append('\\u%04x' % unit)
+                      elif char in '\\=:# !':
+                          result.append('\\' + char)
+                      else:
+                          result.append(char)
+                  return ''.join(result)
+
+              properties = {
+                  'storeFile': 'calm-reels-upload.jks',
+                  'storePassword': store_password,
+                  'keyAlias': alias,
+                  'keyPassword': key_password,
+              }
+              config = Path('android/key.properties')
+              config.write_text(''.join(f'{key}={escape_property(value)}\n' for key, value in properties.items()), encoding='ascii')
+              config.chmod(0o600)
+              mode = 'release'
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'mode={mode}\n')
+          print(f'Building a {mode} APK.')
+          PY
+
+      - name: Build APK for Android phones
+        run: flutter build apk --release --target-platform android-arm,android-arm64 --build-number "$GITHUB_RUN_NUMBER"
+
+      - name: Verify APK signature and offline library
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import zipfile
+
+          apk = Path('build/app/outputs/flutter-apk/app-release.apk')
+          candidates = list((Path(os.environ['ANDROID_HOME']) / 'build-tools').glob('*/apksigner'))
+          if not candidates:
+              raise SystemExit('Android SDK apksigner is missing.')
+          signer = max(candidates, key=lambda path: [int(part) for part in re.findall(r'\d+', path.parent.name)])
+          subprocess.run([str(signer), 'verify', '--verbose', str(apk)], check=True)
+
+          prefix = 'assets/flutter_assets/'
+          with zipfile.ZipFile(apk) as archive:
+              library = json.loads(archive.read(prefix + 'assets/library.json'))
+              videos = library['videos']
+              expected = set()
+              for video in videos:
+                  for field in ('assetPath', 'posterAssetPath'):
+                      asset = video[field]
+                      bundled = archive.getinfo(prefix + asset)
+                      assert bundled.file_size == Path(asset).stat().st_size, f'APK asset differs: {asset}'
+                  expected.add(prefix + video['assetPath'])
+              packaged = {name for name in archive.namelist() if name.startswith(prefix + 'assets/videos/') and name.endswith('.mp4')}
+              assert packaged == expected, 'APK video list does not match the catalog.'
+              for architecture in ('armeabi-v7a', 'arm64-v8a'):
+                  archive.getinfo(f'lib/{architecture}/libflutter.so')
+              print(f'Verified {len(videos)} bundled videos and both phone architectures. APK: {apk.stat().st_size / 1_000_000:.1f} MB.')
+          PY
+
+      - name: Name APK for download
+        id: package
+        env:
+          SIGNING_MODE: ${{ steps.signing.outputs.mode || 'personal' }}
+        run: |
+          mkdir -p dist
+          apk_path="dist/Calm-Reels-${SIGNING_MODE}-${GITHUB_RUN_NUMBER}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "$apk_path"
+          printf 'path=%s\n' "$apk_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload installable APK
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: ${{ steps.package.outputs.path }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Add download link
+        env:
+          APK_URL: ${{ steps.upload.outputs.artifact-url }}
+          SIGNING_MODE: ${{ steps.signing.outputs.mode || 'personal' }}
+        run: |
+          {
+            printf '### Calm Reels APK\n\n'
+            printf '[Download the APK](%s) (GitHub sign-in required).\n\n' "$APK_URL"
+            printf 'Signing: **%s**. All videos are bundled for offline playback.\n\n' "$SIGNING_MODE"
+            printf 'The APK expires from Actions after 7 days. Save a local copy.\n'
+            if [[ "$SIGNING_MODE" == personal ]]; then
+              printf '\nThis personal test build uses a development signing key. Another runner may use a different key; uninstall the previous personal build before installing if Android rejects the update.\n'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove signing files
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for filename in ('android/key.properties', 'android/calm-reels-upload.jks'):
+              Path(filename).unlink(missing_ok=True)
+          PY

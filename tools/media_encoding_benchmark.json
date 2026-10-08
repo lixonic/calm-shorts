@@ -1,0 +1,24 @@
+{
+  "sourceId": "919fa95d9dcb8011",
+  "sourceDurationSeconds": 8.0,
+  "sourceFps": 24,
+  "workers": 1,
+  "encoderThreads": 2,
+  "crf": 25,
+  "maxRateKbps": 1800,
+  "bufferSizeKbps": 3600,
+  "audioBitrateKbps": 96,
+  "fast": {
+    "elapsedSeconds": 6.398,
+    "effectiveFramesPerSecond": 30.009377930603314,
+    "outputBytes": 1184871
+  },
+  "veryfast": {
+    "elapsedSeconds": 3.108,
+    "effectiveFramesPerSecond": 61.77606177606177,
+    "outputBytes": 886263
+  },
+  "selectedPreset": "veryfast",
+  "visualReview": "Compared matching frames of the cat-and-dog medium-motion sample at 720x1280. Veryfast retained visually similar detail without cropping or stretching.",
+  "timingMethod": "Wall time includes source/output hash, encode, metadata verification, and poster generation; presets run sequentially without the full batch."
+}

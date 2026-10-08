@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-08T15:55:35.645150+00:00",
+  "status": "complete",
+  "sourceVideoCount": 324,
+  "completedVideoCount": 324,
+  "reusedVideoCount": 29,
+  "portraitCount": 302,
+  "landscapeCount": 22,
+  "sourceBytes": 2336422496,
+  "preparedVideoBytes": 545108299,
+  "posterBytes": 4850466,
+  "durationSeconds": 3726.55499,
+  "elapsedSeconds": 1326.87,
+  "encoding": {
+    "version": 1,
+    "videoCodec": "libx264",
+    "pixelFormat": "yuv420p",
+    "crf": 25,
+    "preset": "veryfast",
+    "maxRateKbps": 1800,
+    "bufferSizeKbps": 3600,
+    "portraitMaxWidth": 720,
+    "portraitMaxHeight": 1280,
+    "landscapeMaxWidth": 1280,
+    "landscapeMaxHeight": 720,
+    "audioCodec": "aac",
+    "audioBitrateKbps": 96,
+    "maxAudioChannels": 2,
+    "encoderThreads": 2,
+    "posterMaxWidth": 240,
+    "posterMaxHeight": 426
+  },
+  "presetCounts": {
+    "fast": 29,
+    "veryfast": 295
+  },
+  "verification": "Every prepared or reused MP4 is checked with ffprobe; hashes and full durations are verified.",
+  "failures": []
+}
