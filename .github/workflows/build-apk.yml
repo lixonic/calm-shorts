@@ -18,6 +18,9 @@ env:
 jobs:
   apk:
     name: Check and build offline APK
+    outputs:
+      artifact-name: ${{ steps.package.outputs.name }}
+      signing-mode: ${{ steps.signing.outputs.mode || 'personal' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     defaults:
@@ -190,6 +193,7 @@ jobs:
           apk_path="dist/Calm-Reels-${SIGNING_MODE}-${GITHUB_RUN_NUMBER}.apk"
           cp build/app/outputs/flutter-apk/app-release.apk "$apk_path"
           printf 'path=%s\n' "$apk_path" >> "$GITHUB_OUTPUT"
+          printf 'name=Calm-Reels-%s-%s.apk\n' "$SIGNING_MODE" "$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
 
       - name: Upload installable APK
         id: upload
@@ -223,3 +227,72 @@ jobs:
           for filename in ('android/key.properties', 'android/calm-reels-upload.jks'):
               Path(filename).unlink(missing_ok=True)
           PY
+
+  publish:
+    name: Publish public APK download
+    needs: apk
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && !github.event.repository.private
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified APK
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.apk.outputs.artifact-name }}
+          path: dist
+
+      - name: Prepare public download and checksum
+        env:
+          APK_NAME: ${{ needs.apk.outputs.artifact-name }}
+          SIGNING_MODE: ${{ needs.apk.outputs.signing-mode }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          directory = Path('dist')
+          apk = directory / 'Calm-Reels.apk'
+          (directory / os.environ['APK_NAME']).rename(apk)
+          with apk.open('rb') as source:
+              digest = hashlib.file_digest(source, 'sha256').hexdigest()
+          (directory / 'Calm-Reels.apk.sha256').write_text(f'{digest}  Calm-Reels.apk\n')
+
+          notes = [
+              'Calm Reels for Android 7.0 or newer.',
+              '',
+              '- All 324 unique videos are included for offline playback.',
+              '- Separate portrait and landscape feeds, shuffled once per round.',
+              '- Swipe up, pause, and sound controls; no video titles.',
+              '',
+              'Download Calm-Reels.apk below. No GitHub sign-in is required.',
+              f'APK size: {apk.stat().st_size / 1_000_000:.1f} MB.',
+          ]
+          if os.environ['SIGNING_MODE'] == 'personal':
+              notes += [
+                  '',
+                  'This personal build uses a development signing key. If Android rejects an update, uninstall the previous personal build before installing this one.',
+              ]
+          (directory / 'release-notes.md').write_text('\n'.join(notes) + '\n')
+          PY
+
+      - name: Publish APK on GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: apk-${{ github.run_number }}-${{ github.run_attempt }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/Calm-Reels.apk dist/Calm-Reels.apk.sha256 \
+            --repo "$GH_REPO" \
+            --title "Calm Reels - build $GITHUB_RUN_NUMBER" \
+            --notes-file dist/release-notes.md \
+            --target "$RELEASE_SHA" \
+            --latest
+          {
+            printf '### Public APK download\n\n'
+            printf '[Download Calm Reels](https://github.com/%s/releases/latest/download/Calm-Reels.apk)\n\n' "$GH_REPO"
+            printf 'No GitHub sign-in is required. This release download does not expire after 7 days.\n'
+          } >> "$GITHUB_STEP_SUMMARY"

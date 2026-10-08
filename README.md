@@ -23,12 +23,12 @@ Use this **`calm_reels` directory as the repository root** so `.github/workflows
 1. Add the app project to a GitHub repository with Actions enabled.
 2. Open **Actions → Build Android APK → Run workflow**. Pushing changes also starts a build; pull requests run the same checks with personal test signing.
 3. Wait for formatting, analysis, tests, and the Android build to pass.
-4. Download `Calm-Reels-personal-<run number>.apk` from the successful run's **Artifacts** section, or its download link in the run summary. With signing secrets configured, the name uses `release` instead of `personal`.
+4. For a successful build on `main`, download [Calm-Reels.apk](https://github.com/lixonic/calm-shorts/releases/latest/download/Calm-Reels.apk) from the public release. No GitHub sign-in is required. The same link points to the latest successful build.
 5. Copy the APK to your Android phone, open it, and allow that file manager or browser to install the app when Android prompts you.
 
-The workflow uploads the APK directly, so you do not need to extract a ZIP. GitHub sign-in is required to download an Actions artifact. Keep a local copy: the workflow retains APKs for **7 days**. See [GitHub's artifact documentation](https://docs.github.com/en/actions/tutorials/store-and-share-data).
+The public release contains the APK directly and a SHA-256 checksum. Release downloads have no seven-day expiry. The workflow also retains an Actions copy for **7 days**; that copy requires GitHub sign-in. Builds on other branches and pull requests provide only the Actions copy. See [GitHub's release documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) and [artifact documentation](https://docs.github.com/en/actions/tutorials/store-and-share-data).
 
-The build uses Flutter **3.47.0** and pinned action commits. It installs Java 17 and uses the generated AGP 9.1.0 / Gradle 9.3.1 Android project to create one release-mode APK containing both 32-bit ARM and 64-bit ARM support for Android phones. These Gradle and Java versions match the [Android plugin compatibility requirements](https://developer.android.com/build/releases/agp-9-1-0-release-notes#compatibility). It does not publish to Google Play or create a public GitHub release.
+The build uses Flutter **3.47.0** and pinned action commits. It installs Java 17 and uses the generated AGP 9.1.0 / Gradle 9.3.1 Android project to create one release-mode APK containing both 32-bit ARM and 64-bit ARM support for Android phones. These Gradle and Java versions match the [Android plugin compatibility requirements](https://developer.android.com/build/releases/agp-9-1-0-release-notes#compatibility). After a verified build on `main`, a separate job publishes the APK to GitHub Releases and updates the public download link. Only that publishing job has repository write permission. The workflow does not publish to Google Play.
 
 ## Signing and repeat installations
 
