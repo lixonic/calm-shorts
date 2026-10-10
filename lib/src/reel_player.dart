@@ -176,12 +176,18 @@ class _ReelPlayerState extends State<ReelPlayer> {
       children: [
         const ColoredBox(color: Color(0xff101410)),
         if (!initialized && widget.clip.posterAssetPath != null)
-          Image.asset(widget.clip.posterAssetPath!, fit: BoxFit.contain),
-        if (initialized && !_failed)
-          Center(
-            child: AspectRatio(
-              aspectRatio: controller!.value.aspectRatio,
-              child: VideoPlayer(controller),
+          Image.asset(widget.clip.posterAssetPath!, fit: BoxFit.cover),
+        if (initialized && !_failed && controller != null)
+          ClipRect(
+            child: SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: controller.value.size.width,
+                  height: controller.value.size.height,
+                  child: VideoPlayer(controller),
+                ),
+              ),
             ),
           ),
         if (!_failed)

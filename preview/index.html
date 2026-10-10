@@ -24,9 +24,10 @@
         <button class="icon-button info-button" id="info-button" type="button" aria-label="About Calm Reels" aria-expanded="false" aria-controls="about-panel"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4"/><path d="M12 11v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="7.5" r=".85" fill="currentColor"/></svg></button>
       </header>
 
-      <div class="aspect-tabs" role="group" aria-label="Choose video aspect ratio">
-        <button class="aspect-tab is-selected" id="portrait-button" type="button" data-orientation="portrait" aria-pressed="true"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4.5" y="1.8" width="7" height="12.4" rx="1.5" stroke="currentColor" stroke-width="1.2"/></svg>Portrait</button>
-        <button class="aspect-tab" id="landscape-button" type="button" data-orientation="landscape" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.8" y="4.5" width="12.4" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/></svg>Landscape</button>
+      <div class="breath-prompt" id="breath-prompt" hidden>
+        <span class="prompt-leaf" aria-hidden="true">✧</span>
+        <p id="prompt-text">Take a slow, deep breath.</p>
+        <button id="prompt-continue" type="button">Continue</button>
       </div>
 
       <div class="loading-state" id="loading-state" role="status"><span class="loading-orbit" aria-hidden="true"></span><span>Finding a little wonder…</span></div>
@@ -52,7 +53,7 @@
         <span class="about-eyebrow">A LITTLE ROOM TO WANDER</span>
         <h2>Quiet wonder.<br>Fresh every round.</h2>
         <p>Animals, tiny worlds and the gentle outdoors, mixed together in a new order.</p>
-        <p>Every video plays once before the next shuffled round begins. Choose portrait or landscape. Swipe up to explore, down to revisit.</p>
+        <p>Each portrait video plays once in a session. After every five reels, a breathing prompt appears. Swipe up to explore, down to revisit.</p>
         <div class="library-counts" id="library-counts"></div>
         <button class="about-continue" id="about-continue" type="button">Keep wandering <span aria-hidden="true">↗</span></button>
       </section>

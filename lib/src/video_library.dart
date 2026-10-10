@@ -59,6 +59,7 @@ Future<List<VideoClip>> loadVideoLibrary({AssetBundle? bundle}) async {
   }
   final clips = (json['videos'] as List<dynamic>)
       .map((entry) => VideoClip.fromJson(entry as Map<String, dynamic>))
+      .where((clip) => clip.group == AspectGroup.portrait)
       .toList(growable: false);
   if (clips.map((clip) => clip.id).toSet().length != clips.length) {
     throw const FormatException('Duplicate video IDs');

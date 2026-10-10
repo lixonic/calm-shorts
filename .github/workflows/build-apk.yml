@@ -263,8 +263,8 @@ jobs:
           notes = [
               'Calm Reels for Android 7.0 or newer.',
               '',
-              '- All 324 unique videos are included for offline playback.',
-              '- Separate portrait and landscape feeds, shuffled once per round.',
+              '- Portrait videos play fullscreen, each once per session.',
+              '- A breathing prompt appears after every five reels.',
               '- Swipe up, pause, and sound controls; no video titles.',
               '',
               'Download Calm-Reels.apk below. No GitHub sign-in is required.',

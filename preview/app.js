@@ -1,47 +1,96 @@
 (() => {
   'use strict';
 
-  // A shuffle bag draws each member once. History is independent of the bag:
-  // revisiting a video never consumes a new position in the current round.
-  class RoundRobinPool {
-    constructor(videos) {
-      this.videos = videos;
-      this.bag = [];
-      this.round = 0;
-      this.drawn = 0;
-      this.lastDrawnId = null;
-      this.history = [];
-      this.historyIndex = -1;
-    }
+  const BREATH_PROMPTS = [
+    'Take a slow, deep breath.',
+    'Hold this breath for 10 seconds.',
+    'Let the air leave you even more slowly.',
+    'Breathe in gently through your nose.',
+    'Soften your shoulders, then breathe.',
+    'Hold a quiet breath for 8 seconds.',
+    'Feel your belly rise with the next breath.',
+    'Breathe out as if fogging a window.',
+    'Take three tiny sips of air, then rest.',
+    'Hold this breath for 6 seconds.',
+    'Unclench your jaw and breathe out.',
+    'Inhale for a count of four.',
+    'Hold the breath, then smile as you let go.',
+    'Breathe in calm. Breathe out hurry.',
+    'Rest your hands. Take one long breath.',
+    'Hold this breath for 10 seconds, then sigh.',
+    'Notice the air at the tip of your nose.',
+    'Breathe in for 4, out for 6.',
+    'Let your next exhale last a little longer.',
+    'Hold a gentle breath for 5 seconds.',
+    'Drop your tongue from the roof of your mouth.',
+    'Fill your lungs, then pause at the top.',
+    'Breathe as if you have all the time you need.',
+    'Take a deep breath into your back ribs.',
+    'Hold this breath for 7 seconds.',
+    'Blink slowly, then breathe out.',
+    'Inhale warmth. Exhale the day so far.',
+    'Let the next breath be quieter than the last.',
+    'Place a hand on your chest and breathe.',
+    'Hold this breath for 10 seconds, softly.',
+    'Breathe in through the nose, out through the mouth.',
+    'Count one long exhale all the way down.',
+    'Relax your forehead. Take a deep breath.',
+    'Hold the breath, then release it like a wave.',
+    'Take up a little more air than usual, then rest.',
+    'Breathe into the space between your shoulders.',
+    'Hold a still breath for 4 seconds.',
+    'Let your next inhale be round and easy.',
+    'Exhale until the lungs feel empty, then wait.',
+    'Take a deep breath and feel your feet.',
+    'Hold this breath for 9 seconds.',
+    'Breathe as if you are smelling something kind.',
+    'Let the out-breath be twice as long.',
+    'Close your eyes for one full breath.',
+    'Hold the breath, then drip the air out slowly.',
+    'Take a deep breath down to your belly.',
+    'Pause after you exhale. Then begin again.',
+    'Breathe in light. Breathe out tightness.',
+    'Hold this breath for 10 seconds, then blink.',
+    'One more slow breath, just because you can.'
+  ];
 
-    shuffle() {
-      this.bag = [...this.videos];
-      for (let index = this.bag.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1));
-        [this.bag[index], this.bag[swapIndex]] = [this.bag[swapIndex], this.bag[index]];
-      }
-      // draw() uses shift(), so keep the first draw different from the final
-      // draw in the preceding round whenever the pool has more than one video.
-      if (this.bag.length > 1 && this.bag[0].id === this.lastDrawnId) {
-        const swapIndex = 1 + Math.floor(Math.random() * (this.bag.length - 1));
-        [this.bag[0], this.bag[swapIndex]] = [this.bag[swapIndex], this.bag[0]];
-      }
-      this.round += 1;
-      this.drawn = 0;
+  function shuffle(items, avoidFirst) {
+    const bag = [...items];
+    for (let index = bag.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [bag[index], bag[swapIndex]] = [bag[swapIndex], bag[index]];
+    }
+    if (bag.length > 1 && avoidFirst && bag[0] === avoidFirst) {
+      const swapIndex = 1 + Math.floor(Math.random() * (bag.length - 1));
+      [bag[0], bag[swapIndex]] = [bag[swapIndex], bag[0]];
+    }
+    return bag;
+  }
+
+  class SessionFeed {
+    constructor(videos, prompts = BREATH_PROMPTS, promptEvery = 5) {
+      this.videos = shuffle(videos);
+      this.items = [];
+      this.historyIndex = -1;
+      let promptBag = shuffle(prompts);
+      let lastPrompt = null;
+      this.videos.forEach((video, index) => {
+        this.items.push({
+          type: 'video',
+          video,
+          position: index + 1,
+          total: this.videos.length
+        });
+        if ((index + 1) % promptEvery === 0) {
+          if (!promptBag.length) promptBag = shuffle(prompts, lastPrompt);
+          lastPrompt = promptBag.shift();
+          this.items.push({ type: 'prompt', prompt: lastPrompt });
+        }
+      });
     }
 
     next() {
-      if (!this.videos.length) return null;
-      if (this.historyIndex < this.history.length - 1) {
-        this.historyIndex += 1;
-        return this.current;
-      }
-      if (!this.bag.length) this.shuffle();
-      const video = this.bag.shift();
-      this.drawn += 1;
-      this.lastDrawnId = video.id;
-      this.history.push({ video, round: this.round, position: this.drawn });
-      this.historyIndex = this.history.length - 1;
+      if (this.historyIndex < this.items.length - 1) this.historyIndex += 1;
       return this.current;
     }
 
@@ -50,7 +99,8 @@
       return this.current;
     }
 
-    get current() { return this.history[this.historyIndex] || null; }
+    get current() { return this.items[this.historyIndex] || null; }
+    get atEnd() { return this.historyIndex >= this.items.length - 1; }
   }
 
   const byId = id => document.getElementById(id);
@@ -62,8 +112,8 @@
   const pauseButton = byId('pause-button');
   const soundButton = byId('sound-button');
   const aboutPanel = byId('about-panel');
-  const pools = new Map();
-  let orientation = 'portrait';
+  const breathPrompt = byId('breath-prompt');
+  let feed = null;
   let explicitPaused = false;
   let muted = true;
   let aboutOpen = false;
@@ -78,26 +128,23 @@
   let requestPlayGeneration = 0;
   let lastFocusBeforeAbout;
 
-  const pool = () => pools.get(orientation);
-  const currentEntry = () => pool()?.current;
-  const shouldPause = () => explicitPaused || document.hidden || aboutOpen;
+  const currentEntry = () => feed?.current;
+  const isPrompt = () => currentEntry()?.type === 'prompt';
+  const shouldPause = () => explicitPaused || document.hidden || aboutOpen || isPrompt();
 
-  // Exposes facts from the live queue and player for preview verification.
-  // It cannot mutate playback or substitute a simulated media state.
   Object.defineProperty(window, 'calmPreviewState', {
     configurable: false,
     get: () => Object.freeze({
-      currentId: currentEntry()?.video.id || null,
-      round: currentEntry()?.round || 0,
-      visitedCount: pool()?.drawn || 0,
+      currentId: currentEntry()?.video?.id || null,
+      prompt: currentEntry()?.prompt || null,
+      visitedCount: currentEntry()?.position || 0,
       position: currentEntry()?.position || 0,
-      orientation,
       paused: video.paused,
       explicitPaused,
       muted: video.muted,
-      historyIndex: pool()?.historyIndex ?? -1,
-      historyLength: pool()?.history.length || 0,
-      libraryCounts: Object.freeze({ portrait: pools.get('portrait')?.videos.length || 0, landscape: pools.get('landscape')?.videos.length || 0 }),
+      historyIndex: feed?.historyIndex ?? -1,
+      historyLength: feed?.items.length || 0,
+      libraryCounts: Object.freeze({ portrait: feed?.videos.length || 0, landscape: 0 }),
       readyState: video.readyState,
       currentTime: video.currentTime,
       duration: Number.isFinite(video.duration) ? video.duration : null,
@@ -117,7 +164,10 @@
   }
 
   function updateControls() {
-    const paused = explicitPaused || playBlocked;
+    const onPrompt = isPrompt();
+    const paused = explicitPaused || playBlocked || onPrompt;
+    pauseButton.hidden = onPrompt;
+    soundButton.hidden = onPrompt;
     pauseButton.setAttribute('aria-label', paused ? 'Play video' : 'Pause video');
     pauseButton.setAttribute('aria-pressed', String(paused));
     byId('pause-icon').innerHTML = paused
@@ -128,20 +178,19 @@
     byId('sound-icon').innerHTML = '<path d="M4 9v6h4l5 4V5L8 9H4Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>' + (muted
       ? '<path d="m17 9 5 6m0-6-5 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>'
       : '<path d="M17 8.5a5 5 0 0 1 0 7M20 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>');
-    byId('previous-button').disabled = !pool() || pool().historyIndex <= 0;
-    playPrompt.hidden = !playBlocked || shouldPause() || !mediaMessage.hidden;
+    byId('previous-button').disabled = !feed || feed.historyIndex <= 0;
+    byId('next-button').disabled = !feed || feed.atEnd;
+    playPrompt.hidden = onPrompt || !playBlocked || shouldPause() || !mediaMessage.hidden;
   }
 
   async function syncPlayback() {
     const playGeneration = ++requestPlayGeneration;
     video.muted = muted;
-    if (shouldPause() || !currentEntry() || !mediaMessage.hidden) {
+    if (shouldPause() || !currentEntry() || currentEntry().type !== 'video' || !mediaMessage.hidden) {
       video.pause();
       updateControls();
       return;
     }
-    // A clip may finish just as the page is hidden. Returning to the viewer
-    // continues the queue instead of replaying that completed clip.
     if (video.ended) {
       next();
       return;
@@ -152,8 +201,6 @@
       playBlocked = false;
     } catch (error) {
       if (playGeneration !== requestPlayGeneration || error.name === 'AbortError') return;
-      // Autoplay restrictions are recoverable with one tap, without showing
-      // an error or turning a browser policy into a missing-media warning.
       if (error.name === 'NotAllowedError') {
         playBlocked = true;
         loading.hidden = true;
@@ -166,11 +213,12 @@
     if (!entry) {
       video.pause();
       loading.hidden = true;
+      breathPrompt.hidden = true;
       mediaMessage.hidden = false;
-      byId('message-text').textContent = 'No little moments in this view yet.';
+      byId('message-text').textContent = feed ? 'That is all for this wander.' : 'No little moments in this view yet.';
       byId('retry-button').hidden = true;
       byId('skip-button').hidden = true;
-      byId('round-count').textContent = 'Choose another view';
+      byId('round-count').textContent = 'A quiet pause';
       updateControls();
       return;
     }
@@ -179,57 +227,61 @@
     requestPlayGeneration += 1;
     video.pause();
     playBlocked = false;
-    loading.hidden = false;
     mediaMessage.hidden = true;
     playPrompt.hidden = true;
     byId('retry-button').hidden = false;
     byId('skip-button').hidden = false;
-    const { video: item, round, position } = entry;
-    video.setAttribute('aria-label', `${orientation} video`);
+    if (entry.type === 'prompt') {
+      loading.hidden = true;
+      breathPrompt.hidden = false;
+      video.removeAttribute('src');
+      video.load();
+      byId('prompt-text').textContent = entry.prompt;
+      byId('round-count').textContent = 'A breath';
+      byId('progress-fill').style.transform = 'scaleX(0)';
+      announce(entry.prompt);
+      updateControls();
+      return;
+    }
+    breathPrompt.hidden = true;
+    loading.hidden = false;
+    const { video: item, position, total } = entry;
+    video.setAttribute('aria-label', 'Portrait video');
     video.poster = item.posterAssetPath ? new URL(`../${item.posterAssetPath}`, location.href).href : '';
     video.src = new URL(`../${item.assetPath}`, location.href).href;
     video.dataset.generation = String(loadingGeneration);
     video.muted = muted;
-    byId('round-count').textContent = `${String(position).padStart(2, '0')} / ${pool().videos.length}  ·  ROUND ${round}`;
+    byId('round-count').textContent = `${String(position).padStart(2, '0')} / ${total}`;
     byId('progress-fill').style.transform = 'scaleX(0)';
     byId('playback-progress').setAttribute('aria-valuenow', '0');
-    announce(`${orientation} video ${position} of ${pool().videos.length}.`);
+    announce(`Video ${position} of ${total}.`);
     video.load();
     updateControls();
     syncPlayback();
   }
 
   function next() {
-    if (aboutOpen || !pool()?.videos.length) return;
+    if (aboutOpen || !feed?.videos.length) return;
+    if (feed.atEnd && feed.historyIndex >= 0) {
+      showToast('That is all for this wander. Swipe down to revisit.');
+      return;
+    }
     explicitPaused = false;
-    showEntry(pool().next());
+    showEntry(feed.next());
   }
 
   function previous() {
-    if (aboutOpen || !pool()?.videos.length) return;
-    if (pool().historyIndex <= 0) {
+    if (aboutOpen || !feed?.videos.length) return;
+    if (feed.historyIndex <= 0) {
       showToast('Your wandering starts here. Swipe up for the next moment.');
       return;
     }
     explicitPaused = false;
-    showEntry(pool().previous());
-  }
-
-  function changeOrientation(nextOrientation) {
-    if (orientation === nextOrientation) return;
-    orientation = nextOrientation;
-    explicitPaused = false;
-    errorCount = 0;
-    for (const button of document.querySelectorAll('.aspect-tab')) {
-      const selected = button.dataset.orientation === orientation;
-      button.classList.toggle('is-selected', selected);
-      button.setAttribute('aria-pressed', String(selected));
-    }
-    showEntry(pool()?.current || pool()?.next());
+    showEntry(feed.previous());
   }
 
   function togglePaused(showFeedback = false) {
-    if (!currentEntry() || !mediaMessage.hidden) return;
+    if (!currentEntry() || currentEntry().type !== 'video' || !mediaMessage.hidden) return;
     explicitPaused = playBlocked ? false : !explicitPaused;
     playBlocked = false;
     if (showFeedback) {
@@ -281,13 +333,11 @@
     byId('playback-progress').setAttribute('aria-valuenow', String(Math.round(fraction * 100)));
   });
   video.addEventListener('error', () => {
-    if (!currentEntry()) return;
+    if (!currentEntry() || currentEntry().type !== 'video') return;
     loading.hidden = true;
     errorCount += 1;
-    // Keep the viewer moving past a broken clip, but stop after a complete
-    // failed pass so an unavailable library cannot trigger an endless loop.
     const generation = loadingGeneration;
-    if (errorCount < pool().videos.length && !shouldPause()) {
+    if (errorCount < feed.videos.length && !shouldPause()) {
       showToast('This moment needs a little rest. Finding the next…');
       skipTimer = setTimeout(() => {
         if (generation !== loadingGeneration) return;
@@ -312,10 +362,10 @@
   soundButton.addEventListener('click', () => { muted = !muted; video.muted = muted; updateControls(); if (!shouldPause()) syncPlayback(); });
   byId('retry-button').addEventListener('click', () => { errorCount = 0; showEntry(currentEntry()); });
   byId('skip-button').addEventListener('click', () => { errorCount = 0; next(); });
+  byId('prompt-continue').addEventListener('click', next);
   byId('info-button').addEventListener('click', () => setAbout(true));
   byId('close-about').addEventListener('click', () => setAbout(false));
   byId('about-continue').addEventListener('click', () => setAbout(false));
-  document.querySelectorAll('.aspect-tab').forEach(button => button.addEventListener('click', () => changeOrientation(button.dataset.orientation)));
   document.addEventListener('visibilitychange', syncPlayback);
 
   viewer.addEventListener('pointerdown', event => {
@@ -330,7 +380,7 @@
     pointerStart = null;
     if (Math.abs(deltaY) >= 45 && Math.abs(deltaY) > Math.abs(deltaX) * 1.3) {
       if (deltaY < 0) next(); else previous();
-    } else if (Math.abs(deltaX) < 12 && Math.abs(deltaY) < 12) {
+    } else if (Math.abs(deltaX) < 12 && Math.abs(deltaY) < 12 && !isPrompt()) {
       togglePaused(true);
     }
   });
@@ -370,20 +420,20 @@
       const videos = library.videos.filter(item => {
         if (!item || typeof item.id !== 'string' || typeof item.assetPath !== 'string' || distinctIds.has(item.id)) return false;
         distinctIds.add(item.id);
-        return true;
-      }).map(item => ({ ...item, title: String(item.title || 'A little wonder'), orientation: item.orientation === 'landscape' || (item.orientation !== 'portrait' && item.width > item.height) ? 'landscape' : 'portrait' }));
-      for (const aspect of ['portrait', 'landscape']) pools.set(aspect, new RoundRobinPool(videos.filter(item => item.orientation === aspect)));
-      byId('library-counts').replaceChildren(...['portrait', 'landscape'].map(aspect => {
+        const landscape = item.orientation === 'landscape' || (item.orientation !== 'portrait' && item.width > item.height);
+        return !landscape;
+      }).map(item => ({ ...item, title: String(item.title || 'A little wonder') }));
+      feed = new SessionFeed(videos);
+      byId('library-counts').replaceChildren((() => {
         const group = document.createElement('div');
         const count = document.createElement('strong');
         const label = document.createElement('span');
-        count.textContent = String(pools.get(aspect).videos.length);
-        label.textContent = `${aspect[0].toUpperCase()}${aspect.slice(1)} moments`;
+        count.textContent = String(videos.length);
+        label.textContent = 'Portrait moments';
         group.append(count, label);
         return group;
-      }));
-      if (!pools.get('portrait').videos.length && pools.get('landscape').videos.length) changeOrientation('landscape');
-      else showEntry(pool().next());
+      })());
+      showEntry(feed.next());
     } catch (error) {
       loading.hidden = true;
       mediaMessage.hidden = false;
