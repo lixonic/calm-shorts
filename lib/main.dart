@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 import 'src/reels_screen.dart';
+import 'src/breath_prompts.dart';
 import 'src/video_library.dart';
 
 void main() {
@@ -58,15 +59,25 @@ class _LibraryLoader extends StatefulWidget {
 }
 
 class _LibraryLoaderState extends State<_LibraryLoader> {
-  late Future<List<VideoClip>> _library = loadVideoLibrary();
+  Future<({List<VideoClip> clips, PromptLibrary prompts})>
+  _loadLibrary() async {
+    final clips = await loadVideoLibrary();
+    final prompts = await loadPromptLibrary();
+    return (clips: clips, prompts: prompts);
+  }
+
+  late var _library = _loadLibrary();
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<VideoClip>>(
+    return FutureBuilder<({List<VideoClip> clips, PromptLibrary prompts})>(
       future: _library,
       builder: (context, snapshot) {
-        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-          return ReelsScreen(clips: snapshot.data!);
+        if (snapshot.hasData && snapshot.data!.clips.isNotEmpty) {
+          return ReelsScreen(
+            clips: snapshot.data!.clips,
+            prompts: snapshot.data!.prompts,
+          );
         }
         return Scaffold(
           body: Center(
@@ -80,6 +91,8 @@ class _LibraryLoaderState extends State<_LibraryLoader> {
                   Text(
                     snapshot.connectionState == ConnectionState.waiting
                         ? 'A little room to wander'
+                        : snapshot.hasData
+                        ? 'No portrait videos added yet'
                         : 'Your videos could not open',
                     style: const TextStyle(fontSize: 18),
                     textAlign: TextAlign.center,
@@ -94,7 +107,7 @@ class _LibraryLoaderState extends State<_LibraryLoader> {
                   else
                     FilledButton(
                       onPressed: () => setState(() {
-                        _library = loadVideoLibrary();
+                        _library = _loadLibrary();
                       }),
                       child: const Text('Try again'),
                     ),

@@ -27,11 +27,11 @@ class PromptFeedItem extends FeedItem {
 
 /// One shuffled pass of videos. After every [promptEvery] clips, a prompt
 /// is inserted. Videos never repeat. Prompts are drawn from a shuffled bag
-/// and only reuse a line after all 50 have appeared.
+/// and only reuse a line after the entire prompt collection has appeared.
 class SessionFeed {
   SessionFeed(
     Iterable<VideoClip> videos, {
-    List<BreathPrompt> prompts = breathPrompts,
+    List<BreathPrompt> prompts = const [],
     Random? random,
     this.promptEvery = 5,
   }) : _random = random ?? Random() {
@@ -46,9 +46,6 @@ class SessionFeed {
     if (ids.toSet().length != ids.length) {
       throw ArgumentError.value(videos, 'videos', 'The pool must be unique');
     }
-    if (prompts.isEmpty) {
-      throw ArgumentError.value(prompts, 'prompts', 'Need at least one prompt');
-    }
     pool.shuffle(_random);
     final promptBag = _shuffledPrompts(prompts);
     var promptCursor = 0;
@@ -62,7 +59,7 @@ class SessionFeed {
           videoCount: pool.length,
         ),
       );
-      if ((index + 1) % promptEvery == 0) {
+      if (prompts.isNotEmpty && (index + 1) % promptEvery == 0) {
         if (promptCursor >= promptBag.length) {
           promptBag
             ..clear()

@@ -21,5 +21,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/library.json
+    - assets/prompts.json
     - assets/videos/
     - assets/posters/

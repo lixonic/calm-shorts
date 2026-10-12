@@ -30,3 +30,6 @@ calm-reels-upload.base64.txt
 
 # Media assets and pubspec.lock are intentionally tracked.
 # They are required for a reproducible, fully offline APK.
+
+# Local admin uploads, originals, trash, and runtime locks are never bundled.
+.local-admin/

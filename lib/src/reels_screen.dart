@@ -9,9 +9,10 @@ import 'session_feed.dart';
 import 'video_library.dart';
 
 class ReelsScreen extends StatefulWidget {
-  const ReelsScreen({required this.clips, super.key});
+  const ReelsScreen({required this.clips, required this.prompts, super.key});
 
   final List<VideoClip> clips;
+  final PromptLibrary prompts;
 
   @override
   State<ReelsScreen> createState() => _ReelsScreenState();
@@ -33,7 +34,11 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
-    _feed = SessionFeed(widget.clips);
+    _feed = SessionFeed(
+      widget.clips,
+      prompts: widget.prompts.prompts,
+      promptEvery: widget.prompts.promptEvery,
+    );
     _pages = PageController();
   }
 

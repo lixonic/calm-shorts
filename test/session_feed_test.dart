@@ -47,16 +47,15 @@ void main() {
   });
 
   test('The first fifty prompts are unique and drawn from the full set', () {
-    expect(breathPrompts, hasLength(50));
-    expect(breathPrompts.map((prompt) => prompt.id).toSet(), hasLength(50));
+    final prompts = _prompts(50);
     final pool = List.generate(250, (index) => _clip('video-$index'));
-    final feed = SessionFeed(pool, random: Random(3), prompts: breathPrompts);
+    final feed = SessionFeed(pool, random: Random(3), prompts: prompts);
     final shown = [
       for (var index = 0; index < feed.length; index++)
         if (feed.at(index) case PromptFeedItem(:final prompt)) prompt.id,
     ];
     expect(shown, hasLength(50));
-    expect(shown.toSet(), breathPrompts.map((prompt) => prompt.id).toSet());
+    expect(shown.toSet(), prompts.map((prompt) => prompt.id).toSet());
   });
 
   test('Prompts recycle only after the full bag is used', () {
@@ -88,5 +87,23 @@ void main() {
   test('Empty pools and duplicate videos are rejected', () {
     expect(() => SessionFeed(const []), throwsArgumentError);
     expect(() => SessionFeed([_clip('a'), _clip('a')]), throwsArgumentError);
+  });
+
+  test('Removing all prompts leaves a video-only feed', () {
+    final feed = SessionFeed([_clip('a'), _clip('b')], promptEvery: 1);
+    expect(feed.length, 2);
+    expect(feed.at(0), isA<VideoFeedItem>());
+    expect(feed.at(1), isA<VideoFeedItem>());
+  });
+
+  test('A custom prompt interval is respected', () {
+    final feed = SessionFeed(
+      [_clip('a'), _clip('b'), _clip('c')],
+      prompts: _prompts(1),
+      promptEvery: 2,
+    );
+    expect(feed.length, 4);
+    expect(feed.at(2), isA<PromptFeedItem>());
+    expect(feed.at(3), isA<VideoFeedItem>());
   });
 }

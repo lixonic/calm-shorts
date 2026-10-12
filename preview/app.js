@@ -1,59 +1,6 @@
 (() => {
   'use strict';
 
-  const BREATH_PROMPTS = [
-    'Take a slow, deep breath.',
-    'Hold this breath for 10 seconds.',
-    'Let the air leave you even more slowly.',
-    'Breathe in gently through your nose.',
-    'Soften your shoulders, then breathe.',
-    'Hold a quiet breath for 8 seconds.',
-    'Feel your belly rise with the next breath.',
-    'Breathe out as if fogging a window.',
-    'Take three tiny sips of air, then rest.',
-    'Hold this breath for 6 seconds.',
-    'Unclench your jaw and breathe out.',
-    'Inhale for a count of four.',
-    'Hold the breath, then smile as you let go.',
-    'Breathe in calm. Breathe out hurry.',
-    'Rest your hands. Take one long breath.',
-    'Hold this breath for 10 seconds, then sigh.',
-    'Notice the air at the tip of your nose.',
-    'Breathe in for 4, out for 6.',
-    'Let your next exhale last a little longer.',
-    'Hold a gentle breath for 5 seconds.',
-    'Drop your tongue from the roof of your mouth.',
-    'Fill your lungs, then pause at the top.',
-    'Breathe as if you have all the time you need.',
-    'Take a deep breath into your back ribs.',
-    'Hold this breath for 7 seconds.',
-    'Blink slowly, then breathe out.',
-    'Inhale warmth. Exhale the day so far.',
-    'Let the next breath be quieter than the last.',
-    'Place a hand on your chest and breathe.',
-    'Hold this breath for 10 seconds, softly.',
-    'Breathe in through the nose, out through the mouth.',
-    'Count one long exhale all the way down.',
-    'Relax your forehead. Take a deep breath.',
-    'Hold the breath, then release it like a wave.',
-    'Take up a little more air than usual, then rest.',
-    'Breathe into the space between your shoulders.',
-    'Hold a still breath for 4 seconds.',
-    'Let your next inhale be round and easy.',
-    'Exhale until the lungs feel empty, then wait.',
-    'Take a deep breath and feel your feet.',
-    'Hold this breath for 9 seconds.',
-    'Breathe as if you are smelling something kind.',
-    'Let the out-breath be twice as long.',
-    'Close your eyes for one full breath.',
-    'Hold the breath, then drip the air out slowly.',
-    'Take a deep breath down to your belly.',
-    'Pause after you exhale. Then begin again.',
-    'Breathe in light. Breathe out tightness.',
-    'Hold this breath for 10 seconds, then blink.',
-    'One more slow breath, just because you can.'
-  ];
-
   function shuffle(items, avoidFirst) {
     const bag = [...items];
     for (let index = bag.length - 1; index > 0; index -= 1) {
@@ -68,7 +15,7 @@
   }
 
   class SessionFeed {
-    constructor(videos, prompts = BREATH_PROMPTS, promptEvery = 5) {
+    constructor(videos, prompts = [], promptEvery = 5) {
       this.videos = shuffle(videos);
       this.items = [];
       this.historyIndex = -1;
@@ -81,7 +28,7 @@
           position: index + 1,
           total: this.videos.length
         });
-        if ((index + 1) % promptEvery === 0) {
+        if (prompts.length && (index + 1) % promptEvery === 0) {
           if (!promptBag.length) promptBag = shuffle(prompts, lastPrompt);
           lastPrompt = promptBag.shift();
           this.items.push({ type: 'prompt', prompt: lastPrompt });
@@ -423,7 +370,11 @@
         const landscape = item.orientation === 'landscape' || (item.orientation !== 'portrait' && item.width > item.height);
         return !landscape;
       }).map(item => ({ ...item, title: String(item.title || 'A little wonder') }));
-      feed = new SessionFeed(videos);
+      const promptResponse = await fetch(new URL('../assets/prompts.json', location.href), { cache: 'no-store' });
+      if (!promptResponse.ok) throw new Error('Prompts unavailable');
+      const prompts = await promptResponse.json();
+      if (prompts.schemaVersion !== 1 || !Array.isArray(prompts.prompts) || !Number.isInteger(prompts.promptEvery) || prompts.promptEvery < 1) throw new Error('Invalid prompts');
+      feed = new SessionFeed(videos, prompts.prompts.map(prompt => prompt.line), prompts.promptEvery);
       byId('library-counts').replaceChildren((() => {
         const group = document.createElement('div');
         const count = document.createElement('strong');

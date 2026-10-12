@@ -43,6 +43,9 @@ jobs:
       - name: Verify bundled videos and posters
         run: python3 tools/prepare_media.py --verify-bundle
 
+      - name: Test local content administration
+        run: python3 -m unittest discover -s tools/tests -v
+
       - name: Set up Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -179,6 +182,9 @@ jobs:
                   expected.add(prefix + video['assetPath'])
               packaged = {name for name in archive.namelist() if name.startswith(prefix + 'assets/videos/') and name.endswith('.mp4')}
               assert packaged == expected, 'APK video list does not match the catalog.'
+              prompts = json.loads(archive.read(prefix + 'assets/prompts.json'))
+              assert prompts == json.loads(Path('assets/prompts.json').read_text()), 'APK prompts differ from the editable catalog.'
+              assert not any(name.startswith(prefix + 'admin/') or '.local-admin/' in name for name in archive.namelist()), 'Local admin files must not be bundled.'
               for architecture in ('armeabi-v7a', 'arm64-v8a'):
                   archive.getinfo(f'lib/{architecture}/libflutter.so')
               print(f'Verified {len(videos)} bundled videos and both phone architectures. APK: {apk.stat().st_size / 1_000_000:.1f} MB.')
@@ -264,7 +270,7 @@ jobs:
               'Calm Reels for Android 7.0 or newer.',
               '',
               '- Portrait videos play fullscreen, each once per session.',
-              '- A breathing prompt appears after every five reels.',
+              '- Text prompts between reels use the locally managed collection and spacing.',
               '- Swipe up, pause, and sound controls; no video titles.',
               '',
               'Download Calm-Reels.apk below. No GitHub sign-in is required.',

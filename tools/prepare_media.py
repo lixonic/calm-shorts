@@ -67,7 +67,7 @@ def sha256_file(path: Path) -> str:
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess:
-    result = subprocess.run(command, text=True, capture_output=True)
+    result = subprocess.run(command, text=True, capture_output=True, timeout=1200)
     if result.returncode:
         raise RuntimeError(result.stderr.strip()[-6000:] or f"Command failed: {command[0]}")
     return result
@@ -250,10 +250,26 @@ def verify_bundle(output_root: Path, jobs: int) -> int:
     """Validate published assets independently of the source collection."""
     library = json.loads((output_root / "library.json").read_text())
     videos = library.get("videos", [])
-    if library.get("schemaVersion") != 1 or not videos:
-        raise RuntimeError("Invalid or empty bundled library")
+    if library.get("schemaVersion") != 1 or not isinstance(videos, list):
+        raise RuntimeError("Invalid bundled library")
     if len({item["id"] for item in videos}) != len(videos):
         raise RuntimeError("Bundled library contains repeated ids")
+    prompts = json.loads((output_root / "prompts.json").read_text())
+    interval = prompts.get("promptEvery")
+    if prompts.get("schemaVersion") != 1 or type(interval) is not int or not 1 <= interval <= 100:
+        raise RuntimeError("Invalid prompt catalog or interval")
+    rows = prompts.get("prompts")
+    if not isinstance(rows, list) or len({p["id"] for p in rows}) != len(rows):
+        raise RuntimeError("Invalid or duplicate prompts")
+    if any(not isinstance(p.get("id"), str) or not p["id"] or
+           not isinstance(p.get("line"), str) or not p["line"].strip() for p in rows):
+        raise RuntimeError("Prompt IDs and text must be nonempty")
+    expected_videos = {item["assetPath"] for item in videos}
+    expected_posters = {item["posterAssetPath"] for item in videos if item.get("posterAssetPath")}
+    actual_videos = {"assets/" + str(p.relative_to(output_root)) for p in (output_root / "videos").glob("*.mp4")}
+    actual_posters = {"assets/" + str(p.relative_to(output_root)) for p in (output_root / "posters").glob("*.jpg")}
+    if actual_videos != expected_videos or actual_posters != expected_posters:
+        raise RuntimeError("Files in the bundle must exactly match the catalog. Remove unused videos and posters from assets.")
     failures = []
 
     def bundled_path(asset_path: str) -> Path:
@@ -301,7 +317,7 @@ def verify_bundle(output_root: Path, jobs: int) -> int:
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
-    print(f"Verified {len(videos)} bundled videos and their posters.")
+    print(f"Verified {len(videos)} bundled videos, their posters, and {len(rows)} text prompts.")
     return 0
 
 

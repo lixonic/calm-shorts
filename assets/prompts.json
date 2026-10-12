@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "promptEvery": 5,
+  "prompts": [
+    {
+      "id": "p01",
+      "line": "Take a slow, deep breath."
+    },
+    {
+      "id": "p02",
+      "line": "Hold this breath for 10 seconds."
+    },
+    {
+      "id": "p03",
+      "line": "Let the air leave you even more slowly."
+    },
+    {
+      "id": "p04",
+      "line": "Breathe in gently through your nose."
+    },
+    {
+      "id": "p05",
+      "line": "Soften your shoulders, then breathe."
+    },
+    {
+      "id": "p06",
+      "line": "Hold a quiet breath for 8 seconds."
+    },
+    {
+      "id": "p07",
+      "line": "Feel your belly rise with the next breath."
+    },
+    {
+      "id": "p08",
+      "line": "Breathe out as if fogging a window."
+    },
+    {
+      "id": "p09",
+      "line": "Take three tiny sips of air, then rest."
+    },
+    {
+      "id": "p10",
+      "line": "Hold this breath for 6 seconds."
+    },
+    {
+      "id": "p11",
+      "line": "Unclench your jaw and breathe out."
+    },
+    {
+      "id": "p12",
+      "line": "Inhale for a count of four."
+    },
+    {
+      "id": "p13",
+      "line": "Hold the breath, then smile as you let go."
+    },
+    {
+      "id": "p14",
+      "line": "Breathe in calm. Breathe out hurry."
+    },
+    {
+      "id": "p15",
+      "line": "Rest your hands. Take one long breath."
+    },
+    {
+      "id": "p16",
+      "line": "Hold this breath for 10 seconds, then sigh."
+    },
+    {
+      "id": "p17",
+      "line": "Notice the air at the tip of your nose."
+    },
+    {
+      "id": "p18",
+      "line": "Breathe in for 4, out for 6."
+    },
+    {
+      "id": "p19",
+      "line": "Let your next exhale last a little longer."
+    },
+    {
+      "id": "p20",
+      "line": "Hold a gentle breath for 5 seconds."
+    },
+    {
+      "id": "p21",
+      "line": "Drop your tongue from the roof of your mouth."
+    },
+    {
+      "id": "p22",
+      "line": "Fill your lungs, then pause at the top."
+    },
+    {
+      "id": "p23",
+      "line": "Breathe as if you have all the time you need."
+    },
+    {
+      "id": "p24",
+      "line": "Take a deep breath into your back ribs."
+    },
+    {
+      "id": "p25",
+      "line": "Hold this breath for 7 seconds."
+    },
+    {
+      "id": "p26",
+      "line": "Blink slowly, then breathe out."
+    },
+    {
+      "id": "p27",
+      "line": "Inhale warmth. Exhale the day so far."
+    },
+    {
+      "id": "p28",
+      "line": "Let the next breath be quieter than the last."
+    },
+    {
+      "id": "p29",
+      "line": "Place a hand on your chest and breathe."
+    },
+    {
+      "id": "p30",
+      "line": "Hold this breath for 10 seconds, softly."
+    },
+    {
+      "id": "p31",
+      "line": "Breathe in through the nose, out through the mouth."
+    },
+    {
+      "id": "p32",
+      "line": "Count one long exhale all the way down."
+    },
+    {
+      "id": "p33",
+      "line": "Relax your forehead. Take a deep breath."
+    },
+    {
+      "id": "p34",
+      "line": "Hold the breath, then release it like a wave."
+    },
+    {
+      "id": "p35",
+      "line": "Take up a little more air than usual, then rest."
+    },
+    {
+      "id": "p36",
+      "line": "Breathe into the space between your shoulders."
+    },
+    {
+      "id": "p37",
+      "line": "Hold a still breath for 4 seconds."
+    },
+    {
+      "id": "p38",
+      "line": "Let your next inhale be round and easy."
+    },
+    {
+      "id": "p39",
+      "line": "Exhale until the lungs feel empty, then wait."
+    },
+    {
+      "id": "p40",
+      "line": "Take a deep breath and feel your feet."
+    },
+    {
+      "id": "p41",
+      "line": "Hold this breath for 9 seconds."
+    },
+    {
+      "id": "p42",
+      "line": "Breathe as if you are smelling something kind."
+    },
+    {
+      "id": "p43",
+      "line": "Let the out-breath be twice as long."
+    },
+    {
+      "id": "p44",
+      "line": "Close your eyes for one full breath."
+    },
+    {
+      "id": "p45",
+      "line": "Hold the breath, then drip the air out slowly."
+    },
+    {
+      "id": "p46",
+      "line": "Take a deep breath down to your belly."
+    },
+    {
+      "id": "p47",
+      "line": "Pause after you exhale. Then begin again."
+    },
+    {
+      "id": "p48",
+      "line": "Breathe in light. Breathe out tightness."
+    },
+    {
+      "id": "p49",
+      "line": "Hold this breath for 10 seconds, then blink."
+    },
+    {
+      "id": "p50",
+      "line": "One more slow breath, just because you can."
+    }
+  ]
+}

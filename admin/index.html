@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calm Reels · Content library</title>
+  <link rel="stylesheet" href="/admin/style.css">
+  <script src="/admin/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/admin/"><span class="brand-mark" data-icon="leaf"></span><span>calm<span class="brand-sub">CONTENT LIBRARY</span></span></a>
+    <div class="local-badge"><span></span>Local workspace</div>
+    <p class="nav-label">LIBRARY</p>
+    <nav aria-label="Content folders">
+      <button class="nav-item active" data-folder="videos"><span data-icon="folder"></span>All videos<span class="count" id="count-videos">—</span></button>
+      <button class="nav-item inset" data-folder="portrait"><span data-icon="portrait"></span>Portrait<span class="count" id="count-portrait">—</span></button>
+      <button class="nav-item inset" data-folder="landscape"><span data-icon="landscape"></span>Landscape<span class="count" id="count-landscape">—</span></button>
+      <button class="nav-item" data-folder="prompts"><span data-icon="text"></span>Text prompts<span class="count" id="count-prompts">—</span></button>
+    </nav>
+    <div class="nav-divider"></div>
+    <button class="nav-item" data-folder="trash"><span data-icon="trash"></span>Recently removed<span class="count" id="count-trash">—</span></button>
+    <div class="sidebar-bottom"><span data-icon="folder"></span><strong>Saved on this computer</strong><span id="project-path">Loading workspace…</span><p>Push your changes to GitHub when you’re ready to build an updated APK.</p></div>
+  </aside>
+  <main>
+    <header class="topbar"><div class="breadcrumb">Workspace<span>/</span><strong id="breadcrumb-folder">All videos</strong></div><a href="/preview/" target="_blank" rel="noopener" class="preview-link"><span data-icon="play"></span>Open viewer<span data-icon="external"></span></a></header>
+    <section class="content">
+      <div class="page-heading"><div><p class="eyebrow">YOUR LITTLE WORLD, ORGANIZED</p><h1 id="folder-title">All videos</h1><p id="folder-description">A home for every quiet moment.</p></div><div class="heading-actions"><button id="new-prompt" class="button secondary" hidden><span data-icon="plus"></span>New prompt</button><button id="upload-button" class="button primary"><span data-icon="upload"></span><span id="upload-label">Upload videos</span></button></div></div>
+      <div class="library-summary"><span class="summary-icon" data-icon="folder"></span><strong id="summary-count">Loading library…</strong><span class="summary-dot">·</span><span id="summary-detail">Saved locally</span><span class="saved-state"><span></span>Changes save automatically</span></div>
+      <div id="prompt-settings" class="prompt-settings" hidden><span data-icon="spark"></span><div><strong>A little pause between reels</strong><p>Prompts appear randomly, without repeating until all have been shown.</p></div><label>After <input id="prompt-interval" type="number" min="1" max="100" value="5" aria-label="Videos between prompts"> videos</label><button id="save-interval" class="button secondary small">Save</button></div>
+      <div class="toolbar"><label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Search your library…" aria-label="Search library"></label><div class="toolbar-right"><select id="sort" aria-label="Sort library"><option value="name">Name A–Z</option><option value="recent">Recently added</option><option value="duration">Duration</option></select><div class="view-switch" aria-label="View layout"><button class="active" id="grid-view" aria-label="Grid view"><span data-icon="grid"></span></button><button id="list-view" aria-label="List view"><span data-icon="list"></span></button></div></div></div>
+      <div id="selection-bar" class="selection-bar" hidden><label><input id="select-all" type="checkbox"> Select all shown</label><strong id="selection-count">0 selected</strong><button id="clear-selection">Clear</button><button id="remove-selected" class="remove-action"><span data-icon="trash"></span>Remove from APK</button><button id="restore-selected" class="restore-action" hidden><span data-icon="restore"></span>Restore selected</button></div>
+      <div id="upload-progress" class="upload-progress" hidden role="status"><span class="spinner"></span><div><strong id="upload-status">Uploading…</strong><p id="upload-detail">Keep this window open while your videos are prepared.</p></div><progress id="upload-meter" max="100" value="0"></progress></div>
+      <div id="error-banner" class="error-banner" hidden role="alert"></div>
+      <div id="file-area" class="file-area"><div id="file-grid" class="file-grid" aria-label="Library files"></div><div id="empty-state" class="empty-state" hidden><span data-icon="folder"></span><h2 id="empty-title">A little room for something new</h2><p id="empty-description">Drop videos here or choose Upload videos.</p></div></div>
+      <footer class="content-footer"><span data-icon="shield"></span><span id="footer-note">These files become the offline video library in your next APK.</span><span id="visible-count"></span></footer>
+    </section>
+  </main>
+  <input id="video-input" type="file" accept="video/*,.mkv,.avi,.m4v" multiple hidden>
+  <input id="prompt-input" type="file" accept=".txt,.json" multiple hidden>
+  <div id="drop-overlay" class="drop-overlay" hidden><span data-icon="upload"></span><h2>Drop files into your library</h2><p>Videos, or text prompts as TXT / JSON</p></div>
+  <dialog id="editor" class="editor"><div class="dialog-heading"><h2 id="editor-title">Video details</h2><button id="close-editor" class="icon-button" aria-label="Close details"><span data-icon="close"></span></button></div><form id="editor-form"><div id="video-preview" class="video-preview" hidden><video id="preview-video" controls preload="metadata"></video></div><div id="video-details" class="video-details" hidden></div><label id="name-label" class="field">Library name<input id="video-name" maxlength="2000"></label><label id="prompt-label" class="field" hidden>Prompt text<textarea id="prompt-text" rows="5" maxlength="2000" placeholder="Write a quiet moment…"></textarea><span>This text appears between videos in the viewer.</span></label><p id="editor-error" class="form-error" hidden></p><div class="dialog-actions"><button type="button" id="editor-remove" class="button danger-quiet"><span data-icon="trash"></span>Remove</button><span class="spacer"></span><button type="button" id="cancel-editor" class="button secondary">Cancel</button><button type="submit" id="save-editor" class="button primary">Save changes</button></div></form></dialog>
+  <dialog id="confirm-remove" class="confirm-dialog"><span class="remove-symbol" data-icon="trash"></span><h2>Remove from the next APK?</h2><p id="remove-message"></p><div class="dialog-actions"><button id="cancel-remove" class="button secondary">Keep items</button><button id="confirm-remove-button" class="button danger">Remove items</button></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

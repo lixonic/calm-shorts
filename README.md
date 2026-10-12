@@ -1,24 +1,55 @@
 # Calm Reels
 
-An offline Flutter viewer for the CALM SHORTS collection. Swipe vertically through a random mix of videos, with separate **Portrait** and **Landscape** feeds. The collection includes all **324 unique videos**: **302 portrait** and **22 landscape**. Filename themes are not used to filter or order the feed.
+An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **324 unique videos**: **302 portrait** and **22 landscape**. The current fullscreen viewer plays the portrait collection; the admin organizes both orientations. Filename themes do not control playback order.
 
-Each feed plays every video once before starting a newly shuffled cycle. It avoids repeating the last video immediately when a new cycle begins. Swiping back intentionally revisits your viewing history. Videos advance when they finish, and you can swipe ahead whenever you like. Tap a video to pause or resume it, and use the sound control to mute or unmute playback. The viewer does not display video names or titles.
+Each session plays the portrait videos in a shuffled order without repeating them. Swiping back intentionally revisits your viewing history. Videos advance when they finish, and you can swipe ahead whenever you like. Tap a video to pause or resume it, and use the sound control to mute or unmute playback. Text prompts appear between videos at an editable interval (initially five videos). The viewer does not display video names or titles.
 
 Videos are bundled inside the APK. Playback requires no account, network connection, or storage permission. The Android package is `dev.calmshorts.reels`, and the app supports Android 7.0 or later (API 24).
 
+## Local content admin
+
+The admin is a tool for your computer, **not a screen inside the Android app**. It runs on localhost without a login. From `/home/lixon/projects/calm-reels`, with Python 3 and FFmpeg installed, run:
+
+```bash
+python3 tools/admin_server.py
+```
+
+Open [the local admin](http://127.0.0.1:8767/admin/). The sidebar contains **All videos**, **Portrait**, **Landscape**, **Text prompts**, and **Recently removed**. You can search, switch between grid and list views, preview videos, edit library names, select multiple files, and upload or drag files into the window. Library names are only shown in the admin.
+
+- Video uploads are automatically converted to H.264/AAC MP4s and JPEG posters in `assets/videos/` and `assets/posters/`, and added to `assets/library.json`. Aspect folders are assigned automatically. Raw uploaded originals are retained locally in `.local-admin/originals/`; they are excluded from Git and the APK. MP4, MOV, M4V, MKV, WebM, and AVI inputs are supported, up to 2 GB per input and under 100 MB per prepared file.
+- Add or edit text prompts directly, or import a TXT file with one prompt per nonempty line. JSON imports accept a list of strings or a `prompts` list containing objects with `line` fields. Prompts and spacing are saved in `assets/prompts.json`, shared by the browser viewer and Flutter app. Removing all prompts disables interstitial prompts.
+- **Remove from APK** moves the selected video and poster out of `assets/` into `.local-admin/trash/` and removes its catalog entry. Removed prompts leave the prompt catalog. These items are recoverable using **Restore**, stay on this computer, and are ignored by Git and APK builds.
+- Changes save locally immediately. Open a fresh viewer session to see new content. Existing installations on phones change only after installing a newly built APK.
+
+When ready, commit and push the changes, including file removals:
+
+```bash
+git add -A
+git commit -m "Update local content library"
+git push
+```
+
+GitHub Actions verifies that the video files exactly match the catalog and packages the current videos and prompts. It also checks that no admin or local trash files appear in the APK. The admin itself does not commit or push to GitHub. Stop the local server with Ctrl+C. It binds only to `127.0.0.1`; cross-origin changes and requests using non-local hosts are rejected.
+
+Run the admin tests (they create their own temporary content, without editing your library):
+
+```bash
+python3 -m unittest discover -s tools/tests -v
+```
+
 ## Preview the viewer
 
-The `preview/` directory contains a browser preview using the same prepared video library and shuffled playback behavior. From the app project directory, start a local server:
+The admin's **Open viewer** link opens the browser preview. You can also serve the `preview/` directory without the admin, using the same prepared video and prompt catalogs. From the app project directory, start a local server:
 
 ```bash
 python3 -m http.server 8765 --bind 127.0.0.1
 ```
 
-Open [the local preview](http://127.0.0.1:8765/preview/) in your browser. Use a phone-sized window, swipe or scroll to move through videos, or use the arrow keys and Previous/Next controls. Switch between Portrait and Landscape, and try pause and sound. The preview starts muted to support browser autoplay. The installed APK contains the videos and does not need this server.
+Open [the local preview](http://127.0.0.1:8765/preview/) in your browser. Use a phone-sized window, swipe or scroll to move through videos, or use the arrow keys and Previous/Next controls. Try pause and sound. The preview starts muted to support browser autoplay. The installed APK contains the videos and prompts and does not need this server.
 
 ## Get an APK with GitHub Actions
 
-Use this **`calm_reels` directory as the repository root** so `.github/workflows/build-apk.yml` is at the top of the GitHub repository. Include the prepared videos and catalog in `assets/`; they are required for an offline build. Upload this app project, rather than the parent folder containing the original collection.
+Use this **`calm-reels` directory as the repository root** so `.github/workflows/build-apk.yml` is at the top of the GitHub repository. Include the prepared videos and catalogs in `assets/`; they are required for an offline build.
 
 1. Add the app project to a GitHub repository with Actions enabled.
 2. Open **Actions → Build Android APK → Run workflow**. Pushing changes also starts a build; pull requests run the same checks with personal test signing.
@@ -93,16 +124,21 @@ The completed bundle contains **545.1 MB of videos** plus **4.9 MB of posters**,
 | File or directory | Purpose |
 | --- | --- |
 | `assets/library.json` | Playback catalog, grouped only by aspect ratio. |
+| `assets/prompts.json` | Editable prompt collection and spacing between videos. |
 | `assets/videos/` | Prepared MP4 videos named by catalog ID. |
 | `assets/posters/` | JPEG thumbnails shown while a video loads. |
 | `tools/media_preparation_summary.json` | Measured media sizes and preparation settings. |
 | `tools/media_preparation_manifest.json` | Mapping from original files to bundled copies. |
 
-To recreate the media from this project directory, keep the original collection and `catalog/video_catalog.json` in the parent directory, install FFmpeg, and run:
+For new content, use the local admin. To recreate the initial collection using its original external catalog, install FFmpeg and explicitly provide the original media location:
 
 ```bash
-python3 tools/prepare_media.py
+python3 tools/prepare_media.py \
+  --source-root /home/lixon/Documents/CALM-SHORTS \
+  --catalog /home/lixon/Documents/CALM-SHORTS/catalog/video_catalog.json
 ```
+
+This bulk preparation command replaces the video catalog with the source catalog's selection; use the admin for routine additions and removals.
 
 Copies use H.264 video and preserve the original aspect ratio without cropping or upscaling. They are limited to 720 × 1280 for portrait and 1280 × 720 for landscape, with CRF 25 and a 1.8 Mbps video ceiling. The default encoding preset is `veryfast`; 29 previously verified copies made with `fast` were reused, while 295 use `veryfast`. The per-file manifest records each copy's actual settings. Existing audio is encoded as 96 kbps AAC; clips with no audio remain silent. To inspect the prepared bundle without needing any originals or performing another encode:
 
