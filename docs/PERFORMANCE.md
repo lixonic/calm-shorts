@@ -17,6 +17,17 @@ Calm Reels 1.2 adds a 16 MiB / 48-entry poster cache, hidden-state cache trimmin
 
 The **Android-quality** and **Android-performance** artifacts in Actions contain diagnostic reports. The AAB is built and checked on each run; use the manual workflow’s **keep_play_bundle** checkbox to retain its download too. This avoids storing a second large artifact on every push. Development/test plugins are excluded from release by Flutter's Gradle plugin. Playback telemetry is enabled only by `CALM_PERF=true`; the native memory channel is available only in debug/profile builds.
 
+## Verified release: 13 October 2026
+
+[CI run 17](https://github.com/lixonic/calm-shorts/actions/runs/38375128991) passed both build verification and the native test before publishing [release apk-17-1](https://github.com/lixonic/calm-shorts/releases/tag/apk-17-1), from commit `c7be20f8e4db203e3cf7e64f6cb3cb716e19487e`.
+
+- APK: **489,823,362 bytes (489.8 MB)**; largest bundletool compressed download: **466,358,117 bytes (466.4 MB)**; DEX: **1,725,176 bytes**.
+- Android emulator used **16,384-byte pages**. All 100 next actions, 20 backward swipes, hidden cleanup, position/pause restoration, and sound stopping passed. Peak native player count was **3**, with **0 release errors**.
+- First playable video: **2,183 ms from Dart entrypoint**. Anonymous RSS grew from **124,284 KiB** to **141,312 KiB** after the swipe exercise, with zero swap. These are emulator snapshots, not field metrics.
+- Forward-test frame build P90 was **6.228 ms**, but raster P90 was **139.558 ms** on the software-rendered emulator. Playback compatibility passed; these results do **not** establish smooth rendering on phones. Physical-device profiling remains necessary.
+- The release APK probe also completed actual Android Home/return transitions and recorded launch/memory/power diagnostics. Those reports are in the run's performance artifact.
+- The public APK URL returned HTTP 200. Its published checksum matched GitHub's asset digest: `17f1edb8c9e1245a389d6aa775cbac996fb0554083a66126a3c1ee8ccf8a3018`.
+
 ## Profile a connected Android phone
 
 Use a physical phone for meaningful speed, memory, and battery comparisons. An emulator checks compatibility and behavior; its CPU/GPU timing does not predict a phone's smoothness. [Flutter profiling guidance](https://docs.flutter.dev/perf/ui-performance).
