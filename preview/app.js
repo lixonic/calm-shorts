@@ -19,6 +19,7 @@
       this.videos = shuffle(videos);
       this.items = [];
       this.historyIndex = -1;
+      const aurora = new CalmPromptDesign.AuroraColors();
       let promptBag = shuffle(prompts);
       let lastPrompt = null;
       this.videos.forEach((video, index) => {
@@ -31,7 +32,7 @@
         if (prompts.length && (index + 1) % promptEvery === 0) {
           if (!promptBag.length) promptBag = shuffle(prompts, lastPrompt);
           lastPrompt = promptBag.shift();
-          this.items.push({ type: 'prompt', prompt: lastPrompt });
+          this.items.push(CalmPromptDesign.moment(lastPrompt, aurora));
         }
       });
     }
@@ -59,7 +60,11 @@
   const pauseButton = byId('pause-button');
   const soundButton = byId('sound-button');
   const aboutPanel = byId('about-panel');
-  const breathPrompt = byId('breath-prompt');
+  const calmPrompt = byId('calm-prompt');
+  const activityAudio = byId('activity-audio');
+  let audioGeneration = 0;
+  let listening = false;
+  let cuesHidden = false;
   let feed = null;
   let explicitPaused = false;
   let muted = true;
@@ -112,6 +117,8 @@
 
   function updateControls() {
     const onPrompt = isPrompt();
+    video.hidden = onPrompt;
+    viewer.querySelector('.swipe-hint span').textContent = onPrompt ? 'SWIPE WHEN READY' : 'SWIPE TO WANDER';
     const paused = explicitPaused || playBlocked || onPrompt;
     pauseButton.hidden = onPrompt;
     soundButton.hidden = onPrompt;
@@ -156,11 +163,87 @@
     updateControls();
   }
 
+  function stopActivityAudio() {
+    audioGeneration++;
+    listening = false;
+    activityAudio.pause();
+    activityAudio.removeAttribute('src');
+    activityAudio.load();
+    byId('listen-cues').textContent = 'Listen';
+  }
+
+  function renderCues(entry) {
+    const kind = entry.prompt.activity || 'notice';
+    const cue = byId('activity-cue');
+    cue.hidden = ['voices','chimes'].includes(kind);
+    cue.replaceChildren();
+    if (kind === 'fingers') cue.innerHTML = CalmPromptDesign.fingers(entry.count);
+    else if (['leaves', 'stars', 'memory'].includes(kind)) {
+      if (cuesHidden) cue.textContent = 'The leaves are resting.';
+      else cue.innerHTML = CalmPromptDesign.shapes(entry.count, kind);
+    } else cue.textContent = ['voices','chimes'].includes(kind) ? '♫' : '☾';
+    byId('hide-cues').textContent = cuesHidden ? 'Show leaves' : 'Hide leaves';
+  }
+
+  function showActivity(entry) {
+    const kind = entry.prompt.activity || 'notice';
+    calmPrompt.dataset.activity = kind;
+    entry.colors.forEach((color, index) => calmPrompt.style.setProperty(`--aurora-${index}`, color));
+    byId('prompt-text').textContent = entry.prompt.line;
+    byId('prompt-feedback').textContent = 'At your own pace. You can just rest, too.';
+    byId('hide-cues').hidden = kind !== 'memory';
+    byId('listen-cues').hidden = !['voices', 'chimes'].includes(kind);
+    byId('prompt-answers').hidden = kind === 'notice';
+    byId('show-answer').hidden = kind === 'notice';
+    byId('prompt-answers').replaceChildren(...Array.from({length:5}, (_, index) => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.textContent = String(index + 1);
+      button.addEventListener('click', () => revealCount(index + 1));
+      return button;
+    }));
+    cuesHidden = false;
+    renderCues(entry);
+  }
+
+  function revealCount(answer) {
+    const entry = currentEntry();
+    if (!isPrompt()) return;
+    const kind = entry.prompt.activity || 'notice';
+    let noun = {fingers:'fingers',stars:'stars',voices:'hellos',chimes:'chimes',leaves:'leaves',memory:'leaves'}[kind];
+    if (entry.count === 1) noun = {fingers:'finger',stars:'star',voices:'hello',chimes:'chime',leaves:'leaf',memory:'leaf'}[kind];
+    byId('prompt-feedback').textContent = `${entry.count} ${noun}. ${answer === entry.count ? 'Nice noticing.' : 'Take your time.'}`;
+    byId('prompt-answers').querySelectorAll('button').forEach(button => button.classList.toggle('chosen', Number(button.textContent) === answer));
+    cuesHidden = false; renderCues(entry);
+  }
+
+  byId('show-answer').addEventListener('click', () => revealCount());
+  byId('hide-cues').addEventListener('click', () => { if (!isPrompt()) return; cuesHidden = !cuesHidden; renderCues(currentEntry()); });
+  byId('listen-cues').addEventListener('click', async () => {
+    if (!isPrompt() || document.hidden || aboutOpen) return;
+    if (listening) { stopActivityAudio(); return; }
+    const entry = currentEntry();
+    const kind = entry.prompt.activity;
+    if (!['voices','chimes'].includes(kind)) return;
+    const generation = ++audioGeneration;
+    activityAudio.src = new URL(`../assets/activities/${kind}-${entry.count}.m4a`, location.href).href;
+    activityAudio.volume = 0.6;
+    listening = true; byId('listen-cues').textContent = 'Stop';
+    try { await activityAudio.play(); }
+    catch (_) {
+      if (generation !== audioGeneration) return;
+      listening = false; byId('listen-cues').textContent = 'Listen';
+      byId('prompt-feedback').textContent = 'Sound is unavailable. You can keep going.';
+    }
+  });
+  activityAudio.addEventListener('ended', () => { listening = false; byId('listen-cues').textContent = 'Listen'; });
+
   function showEntry(entry) {
+    stopActivityAudio();
+    viewer.classList.toggle('showing-prompt', entry?.type === 'prompt');
     if (!entry) {
       video.pause();
       loading.hidden = true;
-      breathPrompt.hidden = true;
+      calmPrompt.hidden = true;
       mediaMessage.hidden = false;
       byId('message-text').textContent = feed ? 'That is all for this wander.' : 'No little moments in this view yet.';
       byId('retry-button').hidden = true;
@@ -180,17 +263,17 @@
     byId('skip-button').hidden = false;
     if (entry.type === 'prompt') {
       loading.hidden = true;
-      breathPrompt.hidden = false;
+      calmPrompt.hidden = false;
       video.removeAttribute('src');
       video.load();
-      byId('prompt-text').textContent = entry.prompt;
-      byId('round-count').textContent = 'A breath';
+      showActivity(entry);
+      byId('round-count').textContent = 'A little pause';
       byId('progress-fill').style.transform = 'scaleX(0)';
-      announce(entry.prompt);
+      announce(entry.prompt.line);
       updateControls();
       return;
     }
-    breathPrompt.hidden = true;
+    calmPrompt.hidden = true;
     loading.hidden = false;
     const { video: item, position, total } = entry;
     video.setAttribute('aria-label', 'Portrait video');
@@ -243,6 +326,7 @@
 
   function setAbout(open) {
     aboutOpen = open;
+    if (open) stopActivityAudio();
     aboutPanel.hidden = !open;
     byId('info-button').setAttribute('aria-expanded', String(open));
     if (open) {
@@ -313,7 +397,8 @@
   byId('info-button').addEventListener('click', () => setAbout(true));
   byId('close-about').addEventListener('click', () => setAbout(false));
   byId('about-continue').addEventListener('click', () => setAbout(false));
-  document.addEventListener('visibilitychange', syncPlayback);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopActivityAudio(); syncPlayback(); });
+  window.addEventListener('pagehide', stopActivityAudio);
 
   viewer.addEventListener('pointerdown', event => {
     if (aboutOpen || event.target.closest('button') || (event.pointerType === 'mouse' && event.button !== 0)) return;
@@ -374,7 +459,13 @@
       if (!promptResponse.ok) throw new Error('Prompts unavailable');
       const prompts = await promptResponse.json();
       if (prompts.schemaVersion !== 1 || !Array.isArray(prompts.prompts) || !Number.isInteger(prompts.promptEvery) || prompts.promptEvery < 1) throw new Error('Invalid prompts');
-      feed = new SessionFeed(videos, prompts.prompts.map(prompt => prompt.line), prompts.promptEvery);
+      const activityKinds = new Set(['notice','fingers','leaves','stars','voices','chimes','memory']);
+      const promptIds = new Set();
+      for (const prompt of prompts.prompts) {
+        if (typeof prompt.id !== 'string' || !prompt.id || promptIds.has(prompt.id) || typeof prompt.line !== 'string' || !prompt.line.trim() || !activityKinds.has(prompt.activity || 'notice')) throw new Error('Invalid activity');
+        promptIds.add(prompt.id);
+      }
+      feed = new SessionFeed(videos, prompts.prompts, prompts.promptEvery);
       byId('library-counts').replaceChildren((() => {
         const group = document.createElement('div');
         const count = document.createElement('strong');

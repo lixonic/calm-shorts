@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'breath_prompts.dart';
+import 'calm_prompts.dart';
+import 'calm_prompt_card.dart';
 import 'reel_player.dart';
 import 'session_feed.dart';
 import 'video_library.dart';
@@ -128,9 +129,10 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                     itemBuilder: (context, index) {
                       final item = _feed.at(index);
                       return switch (item) {
-                        PromptFeedItem(:final prompt) => BreathPromptCard(
+                        PromptFeedItem(:final prompt) => CalmPromptCard(
                           key: ValueKey('prompt:${prompt.id}:$index'),
-                          prompt: prompt,
+                          item: item,
+                          active: index == _index && _foreground && !_scrolling,
                           onContinue: () => unawaited(_move(1)),
                         ),
                         VideoFeedItem(:final clip) => ReelPlayer(
@@ -278,61 +280,6 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class BreathPromptCard extends StatelessWidget {
-  const BreathPromptCard({
-    required this.prompt,
-    required this.onContinue,
-    super.key,
-  });
-
-  final BreathPrompt prompt;
-  final VoidCallback onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: const Color(0xff101410),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(36, 88, 36, 120),
-          child: Column(
-            children: [
-              const Spacer(),
-              const Icon(Icons.spa_rounded, size: 42, color: Color(0xffccdec2)),
-              const SizedBox(height: 28),
-              Text(
-                prompt.line,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 28,
-                  height: 1.25,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xfff4f2ea),
-                ),
-              ),
-              const SizedBox(height: 36),
-              TextButton(
-                onPressed: onContinue,
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xff26352b),
-                  backgroundColor: const Color(0xffccdec2),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 14,
-                  ),
-                  shape: const StadiumBorder(),
-                ),
-                child: const Text('Continue'),
-              ),
-              const Spacer(),
-            ],
           ),
         ),
       ),

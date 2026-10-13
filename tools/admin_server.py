@@ -41,6 +41,15 @@ def prompt_text(value: object) -> str:
     return value.strip()
 
 
+PROMPT_ACTIVITIES = {"notice", "fingers", "leaves", "stars", "voices", "chimes", "memory"}
+
+
+def prompt_activity(value: object) -> str:
+    if not isinstance(value, str) or value not in PROMPT_ACTIVITIES:
+        raise AdminError("Choose a supported activity.")
+    return value
+
+
 class ContentStore:
     def __init__(self, root: Path):
         self.root = root.resolve()
@@ -166,9 +175,11 @@ class ContentStore:
                 entry = next((p for p in data["prompts"] if p["id"] == prompt_id), None)
                 if entry is None:
                     raise AdminError("Prompt no longer exists.", 404)
-                entry["line"] = line
+                activity = prompt_activity(values.get("activity", entry.get("activity", "notice")))
+                entry.update(line=line, activity=activity)
             else:
-                entry = {"id": "p-" + uuid.uuid4().hex[:12], "line": line}
+                entry = {"id": "p-" + uuid.uuid4().hex[:12], "line": line,
+                         "activity": prompt_activity(values.get("activity", "notice"))}
                 data["prompts"].append(entry)
             atomic_json(self.assets / "prompts.json", data)
             return entry
@@ -180,23 +191,26 @@ class ContentStore:
                 rows = data.get("prompts") if isinstance(data, dict) else data
                 if not isinstance(rows, list):
                     raise ValueError()
-                lines = [prompt_text(p.get("line") if isinstance(p, dict) else p) for p in rows]
+                entries = [{"line": prompt_text(p.get("line") if isinstance(p, dict) else p),
+                            "activity": prompt_activity(p.get("activity", "notice") if isinstance(p, dict) else "notice")} for p in rows]
             except (ValueError, TypeError) as error:
                 raise AdminError("Use a JSON list of strings or prompts with a line field.") from error
         elif Path(name).suffix.lower() == ".txt":
-            lines = [prompt_text(line) for line in text.splitlines() if line.strip()]
+            entries = [{"line": prompt_text(line), "activity": "notice"}
+                       for line in text.splitlines() if line.strip()]
         else:
             raise AdminError("Upload a TXT file (one prompt per line) or a JSON prompt list.")
-        if not lines or len(lines) > 5000:
+        if not entries or len(entries) > 5000:
             raise AdminError("Upload between 1 and 5,000 prompts.")
         with self.lock:
             data = self.prompts()
-            existing = {p["line"] for p in data["prompts"]}
+            existing = {(p["line"], p.get("activity", "notice")) for p in data["prompts"]}
             added = 0
-            for line in lines:
-                if line not in existing:
-                    data["prompts"].append({"id": "p-" + uuid.uuid4().hex[:12], "line": line})
-                    existing.add(line)
+            for entry in entries:
+                key = (entry["line"], entry["activity"])
+                if key not in existing:
+                    data["prompts"].append({"id": "p-" + uuid.uuid4().hex[:12], **entry})
+                    existing.add(key)
                     added += 1
             atomic_json(self.assets / "prompts.json", data)
             return added
@@ -424,7 +438,7 @@ class AdminHandler(BaseHTTPRequestHandler):
                 route = "/admin/"
             if route.endswith("/"):
                 route += "index.html"
-            allowed = ("/admin/", "/preview/", "/assets/videos/", "/assets/posters/")
+            allowed = ("/admin/", "/preview/", "/assets/videos/", "/assets/posters/", "/assets/activities/")
             folder = next((prefix for prefix in allowed if route.startswith(prefix)), None)
             if folder is None and route not in ("/assets/library.json", "/assets/prompts.json"):
                 raise AdminError("File not found.", 404)

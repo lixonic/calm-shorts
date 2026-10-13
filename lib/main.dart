@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 import 'src/reels_screen.dart';
-import 'src/breath_prompts.dart';
+import 'src/calm_prompts.dart';
 import 'src/video_library.dart';
 
 void main() {

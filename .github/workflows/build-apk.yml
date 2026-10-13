@@ -182,6 +182,8 @@ jobs:
                   expected.add(prefix + video['assetPath'])
               packaged = {name for name in archive.namelist() if name.startswith(prefix + 'assets/videos/') and name.endswith('.mp4')}
               assert packaged == expected, 'APK video list does not match the catalog.'
+              for sound in Path('assets/activities').glob('*.m4a'):
+                  assert archive.read(prefix + sound.as_posix()) == sound.read_bytes(), f'APK sound differs: {sound}'
               prompts = json.loads(archive.read(prefix + 'assets/prompts.json'))
               assert prompts == json.loads(Path('assets/prompts.json').read_text()), 'APK prompts differ from the editable catalog.'
               assert not any(name.startswith(prefix + 'admin/') or '.local-admin/' in name for name in archive.namelist()), 'Local admin files must not be bundled.'

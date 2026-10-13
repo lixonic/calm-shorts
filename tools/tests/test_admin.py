@@ -94,6 +94,21 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(self.store.prompts()["prompts"], [])
         self.assertEqual(verify_bundle(self.root / "assets", 1), 0)
 
+    def test_activity_edits_and_json_import_preserve_types_atomically(self):
+        self.store.save_prompt({"id": "p1", "line": "Count fingers.", "activity": "fingers"})
+        self.store.save_prompt({"id": "p1", "line": "Count these fingers."})
+        self.assertEqual(self.store.prompts()["prompts"][0]["activity"], "fingers")
+        self.assertEqual(self.store.import_prompts('[{"line":"Listen to hellos.","activity":"voices"}]', "activities.json"), 1)
+        self.assertEqual(self.store.prompts()["prompts"][-1]["activity"], "voices")
+        before = self.store.prompts()
+        with self.assertRaises(AdminError):
+            self.store.save_prompt({"id": "p1", "line": "Changed", "activity": "unknown"})
+        with self.assertRaises(AdminError):
+            self.store.import_prompts('[{"line":"Valid","activity":"notice"},{"line":"Bad","activity":"unknown"}]', "bad.json")
+        self.assertEqual(self.store.prompts(), before)
+        with self.assertRaisesRegex(RuntimeError, "missing its offline sound"):
+            verify_bundle(self.root / "assets", 1)
+
     def test_invalid_settings_and_asset_paths_are_rejected(self):
         for value in (0, -1, True, 101, "5", 2.5):
             with self.assertRaises(AdminError):

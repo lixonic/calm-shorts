@@ -4,203 +4,253 @@
   "prompts": [
     {
       "id": "p01",
-      "line": "Take a slow, deep breath."
+      "line": "Let your hands rest where they are.",
+      "activity": "notice"
     },
     {
       "id": "p02",
-      "line": "Hold this breath for 10 seconds."
+      "line": "How many fingers are held up?",
+      "activity": "fingers"
     },
     {
       "id": "p03",
-      "line": "Let the air leave you even more slowly."
+      "line": "Count these little leaves, slowly.",
+      "activity": "leaves"
     },
     {
       "id": "p04",
-      "line": "Breathe in gently through your nose."
+      "line": "Blink softly. Let your eyes rest.",
+      "activity": "notice"
     },
     {
       "id": "p05",
-      "line": "Soften your shoulders, then breathe."
+      "line": "How many quiet hellos do you hear?",
+      "activity": "voices"
     },
     {
       "id": "p06",
-      "line": "Hold a quiet breath for 8 seconds."
+      "line": "How many stars can you find?",
+      "activity": "stars"
     },
     {
       "id": "p07",
-      "line": "Feel your belly rise with the next breath."
+      "line": "Count the leaves. Hide them and remember.",
+      "activity": "memory"
     },
     {
       "id": "p08",
-      "line": "Breathe out as if fogging a window."
+      "line": "Notice one soft color on the screen.",
+      "activity": "notice"
     },
     {
       "id": "p09",
-      "line": "Take three tiny sips of air, then rest."
+      "line": "Close your eyes if you like. Count the soft chimes.",
+      "activity": "chimes"
     },
     {
       "id": "p10",
-      "line": "Hold this breath for 6 seconds."
+      "line": "Let your shoulders rest comfortably.",
+      "activity": "notice"
     },
     {
       "id": "p11",
-      "line": "Unclench your jaw and breathe out."
+      "line": "Count the fingers, one at a time.",
+      "activity": "fingers"
     },
     {
       "id": "p12",
-      "line": "Inhale for a count of four."
+      "line": "How many leaves are resting here?",
+      "activity": "leaves"
     },
     {
       "id": "p13",
-      "line": "Hold the breath, then smile as you let go."
+      "line": "Listen for each hello. How many are there?",
+      "activity": "voices"
     },
     {
       "id": "p14",
-      "line": "Breathe in calm. Breathe out hurry."
+      "line": "Let your fingers rest gently.",
+      "activity": "notice"
     },
     {
       "id": "p15",
-      "line": "Rest your hands. Take one long breath."
+      "line": "Count each star just once.",
+      "activity": "stars"
     },
     {
       "id": "p16",
-      "line": "Hold this breath for 10 seconds, then sigh."
+      "line": "Look at the leaves. How many will you remember?",
+      "activity": "memory"
     },
     {
       "id": "p17",
-      "line": "Notice the air at the tip of your nose."
+      "line": "Notice how your hands feel while they rest.",
+      "activity": "notice"
     },
     {
       "id": "p18",
-      "line": "Breathe in for 4, out for 6."
+      "line": "Look away if you like. How many chimes do you hear?",
+      "activity": "chimes"
     },
     {
       "id": "p19",
-      "line": "Let your next exhale last a little longer."
+      "line": "How many fingers are pointing up?",
+      "activity": "fingers"
     },
     {
       "id": "p20",
-      "line": "Hold a gentle breath for 5 seconds."
+      "line": "Make one gentle blink.",
+      "activity": "notice"
     },
     {
       "id": "p21",
-      "line": "Drop your tongue from the roof of your mouth."
+      "line": "Find each leaf. Count at your own pace.",
+      "activity": "leaves"
     },
     {
       "id": "p22",
-      "line": "Fill your lungs, then pause at the top."
+      "line": "Count the quiet hellos, one by one.",
+      "activity": "voices"
     },
     {
       "id": "p23",
-      "line": "Breathe as if you have all the time you need."
+      "line": "Let your eyes rest for a little moment.",
+      "activity": "notice"
     },
     {
       "id": "p24",
-      "line": "Take a deep breath into your back ribs."
+      "line": "Find the little stars. How many are there?",
+      "activity": "stars"
     },
     {
       "id": "p25",
-      "line": "Hold this breath for 7 seconds."
+      "line": "Remember the leaves. You can peek whenever you like.",
+      "activity": "memory"
     },
     {
       "id": "p26",
-      "line": "Blink slowly, then breathe out."
+      "line": "Rest your hands. Nothing to finish right now.",
+      "activity": "notice"
     },
     {
       "id": "p27",
-      "line": "Inhale warmth. Exhale the day so far."
+      "line": "Listen to the soft chimes. Count at your own pace.",
+      "activity": "chimes"
     },
     {
       "id": "p28",
-      "line": "Let the next breath be quieter than the last."
+      "line": "Try counting these fingers slowly.",
+      "activity": "fingers"
     },
     {
       "id": "p29",
-      "line": "Place a hand on your chest and breathe."
+      "line": "Count the leaves. You can take your time.",
+      "activity": "leaves"
     },
     {
       "id": "p30",
-      "line": "Hold this breath for 10 seconds, softly."
+      "line": "You can be still for a little moment.",
+      "activity": "notice"
     },
     {
       "id": "p31",
-      "line": "Breathe in through the nose, out through the mouth."
+      "line": "How many times does the voice say hello?",
+      "activity": "voices"
     },
     {
       "id": "p32",
-      "line": "Count one long exhale all the way down."
+      "line": "Count the stars, from left to right.",
+      "activity": "stars"
     },
     {
       "id": "p33",
-      "line": "Relax your forehead. Take a deep breath."
+      "line": "Let your face rest comfortably.",
+      "activity": "notice"
     },
     {
       "id": "p34",
-      "line": "Hold the breath, then release it like a wave."
+      "line": "Look, hide, and remember the little leaves.",
+      "activity": "memory"
     },
     {
       "id": "p35",
-      "line": "Take up a little more air than usual, then rest."
+      "line": "How many soft chimes can you count?",
+      "activity": "chimes"
     },
     {
       "id": "p36",
-      "line": "Breathe into the space between your shoulders."
+      "line": "Your eyes can close whenever they feel ready.",
+      "activity": "notice"
     },
     {
       "id": "p37",
-      "line": "Hold a still breath for 4 seconds."
+      "line": "Find each raised finger. How many are there?",
+      "activity": "fingers"
     },
     {
       "id": "p38",
-      "line": "Let your next inhale be round and easy."
+      "line": "How many little leaves do you see?",
+      "activity": "leaves"
     },
     {
       "id": "p39",
-      "line": "Exhale until the lungs feel empty, then wait."
+      "line": "Let your arms rest comfortably.",
+      "activity": "notice"
     },
     {
       "id": "p40",
-      "line": "Take a deep breath and feel your feet."
+      "line": "Listen quietly. Count each hello.",
+      "activity": "voices"
     },
     {
       "id": "p41",
-      "line": "Hold this breath for 9 seconds."
+      "line": "How many little stars are resting here?",
+      "activity": "stars"
     },
     {
       "id": "p42",
-      "line": "Breathe as if you are smelling something kind."
+      "line": "Notice where your hands are resting.",
+      "activity": "notice"
     },
     {
       "id": "p43",
-      "line": "Let the out-breath be twice as long."
+      "line": "Remember how many leaves you saw. Peeking is okay.",
+      "activity": "memory"
     },
     {
       "id": "p44",
-      "line": "Close your eyes for one full breath."
+      "line": "Count the gentle sounds. Then rest if you like.",
+      "activity": "chimes"
     },
     {
       "id": "p45",
-      "line": "Hold the breath, then drip the air out slowly."
+      "line": "Let your feet rest where they are.",
+      "activity": "notice"
     },
     {
       "id": "p46",
-      "line": "Take a deep breath down to your belly."
+      "line": "Pick a soft color on the screen to notice.",
+      "activity": "notice"
     },
     {
       "id": "p47",
-      "line": "Pause after you exhale. Then begin again."
+      "line": "You can let your hands be still.",
+      "activity": "notice"
     },
     {
       "id": "p48",
-      "line": "Breathe in light. Breathe out tightness."
+      "line": "Give your eyes a little quiet rest.",
+      "activity": "notice"
     },
     {
       "id": "p49",
-      "line": "Hold this breath for 10 seconds, then blink."
+      "line": "There is no hurry. Stay here for a moment.",
+      "activity": "notice"
     },
     {
       "id": "p50",
-      "line": "One more slow breath, just because you can."
+      "line": "You can just rest. That is enough.",
+      "activity": "notice"
     }
   ]
 }

@@ -1,156 +1,97 @@
 # Calm Reels
 
-An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **334 unique videos, all portrait**. The fullscreen viewer plays this portrait collection; the admin provides content folders for managing uploads. Filename themes do not control playback order.
+**A little room to wander.**
 
-Each session plays the portrait videos in a shuffled order without repeating them. Swiping back intentionally revisits your viewing history. Videos advance when they finish, and you can swipe ahead whenever you like. Tap a video to pause or resume it, and use the sound control to mute or unmute playback. Text prompts appear between videos at an editable interval (initially five videos). The viewer does not display video names or titles.
+Calm Reels is an offline Flutter app for a collection of AI-generated, nature-inspired shorts: animals, plants, tiny worlds, and soft everyday scenes. Swipe upward to explore a shuffled portrait feed. Small, optional activities appear between the videos.
 
-Videos are bundled inside the APK. Playback requires no account, network connection, or storage permission. The Android package is `dev.calmshorts.reels`, and the app supports Android 7.0 or later (API 24).
+[Download the Android APK](https://github.com/lixonic/calm-shorts/releases/latest/download/Calm-Reels.apk) · [Open the local preview](http://127.0.0.1:8767/preview/) · [Build and content guide](docs/BUILD.md)
 
-## Local content admin
+## The idea behind the “biophilic AI slop”
 
-The admin is a tool for your computer, **not a screen inside the Android app**. It runs on localhost without a login. From `/home/lixon/projects/calm-reels`, with Python 3 and FFmpeg installed, run:
+The starting idea was deliberately simple: take roughly **45 minutes of biophilic AI slop** and give it a quiet place to live. A fox on a beach, a miniature forest, an unlikely animal doing something ordinary—little generated moments that can be pleasant to look at without needing a story.
+
+“AI slop” is a candid description of the material. These clips are synthetic, sometimes strange, and imperfect. Nature, animals, and gentle movement provide the visual direction. The collection can be edited whenever a clip feels too busy or distracting.
+
+The interface follows that same small ambition. Give each video room. Keep the controls simple. Make the collection finite. Let a child pause, skip, revisit, or stop. There are no likes, comments, scores, or streaks competing for attention.
+
+The app is designed for calm viewing and winding down. Its effect on sleep has not been measured. Every activity is an invitation that can be left unfinished.
+
+## What is in the current collection
+
+| Content | Current amount |
+| --- | --- |
+| Portrait videos | **334** |
+| Video-only running time | **50 minutes 42 seconds** |
+| Quiet pauses | **20** |
+| Counting, listening, and memory activities | **30** |
+| Default spacing | One pause after every **5 videos** |
+| Prepared media | About **527 MB**, before app code and Android libraries |
+
+The original “45 minutes” describes the idea; the library has grown with new additions. Optional pauses add as much time as the child chooses to spend on them.
+
+## The actual preview
+
+These screenshots were captured from the running local browser preview on **13 October 2026**. They show the real collection and working activity cards. The browser preview uses the same video and prompt catalogs as the Flutter app.
+
+![A real portrait video playing in the Calm Reels preview](docs/screenshots/reels-preview.jpg)
+
+**A quiet pause and counting fingers.** Backgrounds are still, soft aurora gradients. Every new card receives three distinct colors; those color values are not reused within the session. Revisiting a card keeps its colors and counting cues.
+
+<p>
+  <img src="docs/screenshots/activity-notice.jpg" width="320" alt="A quiet pause asking for one gentle blink, with an immediate Continue button">
+  <img src="docs/screenshots/activity-fingers.jpg" width="320" alt="A working finger-counting activity with choices from one to five">
+</p>
+
+**Counting leaves and listening to quiet hellos.** The things to count are actually present: visible fingers, leaves, or stars, and bundled recordings of spoken hellos or soft chimes.
+
+<p>
+  <img src="docs/screenshots/activity-leaves.jpg" width="320" alt="Five visible leaves on a soft aurora background">
+  <img src="docs/screenshots/activity-voices.jpg" width="320" alt="An optional listening activity with a Listen button and number choices">
+</p>
+
+## Small activities, without hurdles
+
+Activities use **one to five** items and short, concrete instructions, suitable for a mixed-age collection. They are self-contained on the screen and designed to be tried independently. Nothing asks a child to fetch an object, move around the room, or involve another person.
+
+- **Notice:** a gentle blink, resting hands, or noticing a soft color.
+- **Count:** raised fingers, little leaves, or stars already on the card.
+- **Listen:** tap **Listen**, then count the quiet hellos or chimes. Closing the eyes is optional.
+- **Remember:** look at the leaves, hide them when ready, and remember the count. Peeking is always allowed.
+
+There is no countdown, score, penalty, forced breath-holding, or completion gate. **Show me** reveals the count. **Continue** is available immediately. A child can simply rest on a card. Sound starts only after a tap and stops when the card is left or the app goes into the background.
+
+## A shuffled collection with an ending
+
+Each video file plays once in a randomly shuffled session. After the last video, that pass ends. Swiping backward revisits the same history. Prompt cards also come from a shuffled bag and repeat only after the full prompt set has appeared.
+
+Video names stay out of the viewer. The content is separated by aspect ratio, and the current collection is entirely portrait. There are no theme-based feeds or popularity rankings.
+
+## Content stays under your control
+
+The file-manager admin runs **on your computer**, on localhost, without a login. It manages videos, prompt text, activity types, and the spacing between pauses. It is separate from the Android app.
+
+![The running local content manager with the current 334-video library](docs/screenshots/local-admin.jpg)
+
+Choose a prompt's text and activity type in its editor:
+
+![The real prompt editor showing the Count fingers activity type](docs/screenshots/prompt-editor.jpg)
+
+Uploads create official MP4s and posters in the local project. **Remove from APK** moves an item into recoverable local trash and removes it from the next bundle. Incoming originals in `assets/new-videos/` stay out of Git and APK builds. Commit and push the official changes to publish an updated APK through GitHub Actions.
+
+## Run the preview locally
+
+With Python 3 and FFmpeg installed, run this from the project directory:
 
 ```bash
 python3 tools/admin_server.py
 ```
 
-Open [the local admin](http://127.0.0.1:8767/admin/). The sidebar contains **All videos**, **Portrait**, **Text prompts**, and **Recently removed**. You can search, switch between grid and list views, preview videos, edit library names, select multiple files, and upload or drag files into the window. Library names are only shown in the admin.
+Open [the admin](http://127.0.0.1:8767/admin/) or [the live viewer](http://127.0.0.1:8767/preview/). The viewer link requires this local server to be running.
 
-- Video uploads are automatically converted to H.264/AAC MP4s and JPEG posters in `assets/videos/` and `assets/posters/`, and added to `assets/library.json`. Aspect folders are assigned automatically. Raw uploaded originals are retained locally in `.local-admin/originals/`; they are excluded from Git and the APK. MP4, MOV, M4V, MKV, WebM, and AVI inputs are supported, up to 2 GB per input and under 100 MB per prepared file.
-- Add or edit text prompts directly, or import a TXT file with one prompt per nonempty line. JSON imports accept a list of strings or a `prompts` list containing objects with `line` fields. Prompts and spacing are saved in `assets/prompts.json`, shared by the browser viewer and Flutter app. Removing all prompts disables interstitial prompts.
-- **Remove from APK** moves the selected video and poster out of `assets/` into `.local-admin/trash/` and removes its catalog entry. Removed prompts leave the prompt catalog. These items are recoverable using **Restore**, stay on this computer, and are ignored by Git and APK builds.
-- Changes save locally immediately. Open a fresh viewer session to see new content. Existing installations on phones change only after installing a newly built APK.
+The APK carries its videos, prompts, and counting sounds with it. It works offline and requires no account, internet permission, microphone, camera, or storage permission. Bundling the collection makes the APK large; new content reaches an installed phone through a new APK build.
 
-When ready, commit and push the changes, including file removals:
+## Build, verify, and maintain
 
-```bash
-git add -A
-git commit -m "Update local content library"
-git push
-```
+See [the build and content guide](docs/BUILD.md) for Android builds, signing keys, content imports, and reliable updates.
 
-GitHub Actions verifies that the video files exactly match the catalog and packages the current videos and prompts. It also checks that no admin or local trash files appear in the APK. The admin itself does not commit or push to GitHub. Stop the local server with Ctrl+C. It binds only to `127.0.0.1`; cross-origin changes and requests using non-local hosts are rejected.
-
-Run the admin tests (they create their own temporary content, without editing your library):
-
-```bash
-python3 -m unittest discover -s tools/tests -v
-```
-
-## Preview the viewer
-
-The admin's **Open viewer** link opens the browser preview. You can also serve the `preview/` directory without the admin, using the same prepared video and prompt catalogs. From the app project directory, start a local server:
-
-```bash
-python3 -m http.server 8765 --bind 127.0.0.1
-```
-
-Open [the local preview](http://127.0.0.1:8765/preview/) in your browser. Use a phone-sized window, swipe or scroll to move through videos, or use the arrow keys and Previous/Next controls. Try pause and sound. The preview starts muted to support browser autoplay. The installed APK contains the videos and prompts and does not need this server.
-
-## Get an APK with GitHub Actions
-
-Use this **`calm-reels` directory as the repository root** so `.github/workflows/build-apk.yml` is at the top of the GitHub repository. Include the prepared videos and catalogs in `assets/`; they are required for an offline build.
-
-1. Add the app project to a GitHub repository with Actions enabled.
-2. Open **Actions → Build Android APK → Run workflow**. Pushing changes also starts a build; pull requests run the same checks with personal test signing.
-3. Wait for formatting, analysis, tests, and the Android build to pass.
-4. For a successful build on `main`, download [Calm-Reels.apk](https://github.com/lixonic/calm-shorts/releases/latest/download/Calm-Reels.apk) from the public release. No GitHub sign-in is required. The same link points to the latest successful build.
-5. Copy the APK to your Android phone, open it, and allow that file manager or browser to install the app when Android prompts you.
-
-The public release contains the APK directly and a SHA-256 checksum. Release downloads have no seven-day expiry. The workflow also retains an Actions copy for **7 days**; that copy requires GitHub sign-in. Builds on other branches and pull requests provide only the Actions copy. See [GitHub's release documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) and [artifact documentation](https://docs.github.com/en/actions/tutorials/store-and-share-data).
-
-The build uses Flutter **3.47.0** and pinned action commits. It installs Java 17 and uses the generated AGP 9.1.0 / Gradle 9.3.1 Android project to create one release-mode APK containing both 32-bit ARM and 64-bit ARM support for Android phones. These Gradle and Java versions match the [Android plugin compatibility requirements](https://developer.android.com/build/releases/agp-9-1-0-release-notes#compatibility). After a verified build on `main`, a separate job publishes the APK to GitHub Releases and updates the public download link. Only that publishing job has repository write permission. The workflow does not publish to Google Play.
-
-## Signing and repeat installations
-
-The first build works without signing secrets. It produces an installable personal test APK signed with the Android development key. GitHub runners do not share that key, so a later APK may require uninstalling the previous personal build first. Android requires the same signing key to update an existing app. See [Flutter's Android signing guide](https://docs.flutter.dev/deployment/android#sign-the-app).
-
-For repeatable updates, create one private upload keystore and save these four repository secrets under **Settings → Secrets and variables → Actions**:
-
-| Secret | Value |
-| --- | --- |
-| `ANDROID_KEYSTORE_BASE64` | The whole keystore file encoded as base64. |
-| `ANDROID_KEYSTORE_PASSWORD` | The keystore password. |
-| `ANDROID_KEY_ALIAS` | The signing key's alias. |
-| `ANDROID_KEY_PASSWORD` | The signing key's password. |
-
-Provide all four secrets together. The workflow stops with a clear error if only some are supplied. Pull-request builds do not use these secrets. The keystore and signing properties are removed from the runner after each build and are excluded from Git.
-
-Create the key once on a machine with Java installed:
-
-```bash
-keytool -genkeypair -v -keystore calm-reels-upload.jks \
-  -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 \
-  -alias calm-reels
-base64 -w 0 calm-reels-upload.jks > calm-reels-upload.base64.txt
-```
-
-Keep the keystore and passwords backed up privately. Never commit the keystore or the base64 text file. Changing from a personal test build to your private signing key requires uninstalling the personal build once.
-
-To use that same private key locally, create `android/key.properties` with these fields, and place the keystore at the indicated path relative to `android/`:
-
-```properties
-storeFile=calm-reels-upload.jks
-storePassword=YOUR_KEYSTORE_PASSWORD
-keyAlias=calm-reels
-keyPassword=YOUR_KEY_PASSWORD
-```
-
-## Run or build locally
-
-Install the Flutter version specified by `FLUTTER_VERSION` in `.github/workflows/build-apk.yml`, the Android SDK, and Java 17. Attach an Android phone with USB debugging enabled for a local run.
-
-```bash
-flutter pub get --enforce-lockfile
-flutter analyze
-flutter test
-flutter run
-```
-
-To build an APK:
-
-```bash
-flutter build apk --release --target-platform android-arm,android-arm64
-```
-
-The local output is `build/app/outputs/flutter-apk/app-release.apk`. Local builds use the same signing fallback as Actions when `android/key.properties` is absent.
-
-## Bundled media and storage
-
-Byte-identical duplicate copies are skipped when adding videos. Individual clips and assembled edits both remain available. The original collection is unchanged; the app uses prepared copies and a catalog under `assets/`.
-
-The active portrait bundle contains **521.6 MB of videos** plus **5.2 MB of posters**, about **527 MB total** before the app code and Android libraries are added. These are decimal MB. The preparation summary and manifest retain the initial compression measurements and original source mappings. The final APK size is measured after building.
-
-| File or directory | Purpose |
-| --- | --- |
-| `assets/library.json` | Playback catalog, grouped only by aspect ratio. |
-| `assets/prompts.json` | Editable prompt collection and spacing between videos. |
-| `assets/videos/` | Prepared MP4 videos named by catalog ID. |
-| `assets/posters/` | JPEG thumbnails shown while a video loads. |
-| `assets/new-videos/` | Incoming originals, excluded from Git and APK builds. |
-| `tools/media_preparation_summary.json` | Measured media sizes and preparation settings. |
-| `tools/media_preparation_manifest.json` | Mapping from original files to bundled copies. |
-
-For new content, use the local admin. If you place originals in `assets/new-videos/`, upload them through the admin to create the official copies before deleting that incoming folder. The originals in that folder are ignored by Git and are never included in the APK. To recreate the initial collection using its original external catalog, install FFmpeg and explicitly provide the original media location:
-
-```bash
-python3 tools/prepare_media.py \
-  --source-root /home/lixon/Documents/CALM-SHORTS \
-  --catalog /home/lixon/Documents/CALM-SHORTS/catalog/video_catalog.json
-```
-
-This bulk preparation command replaces the video catalog with the source catalog's selection; use the admin for routine additions and removals.
-
-Copies use H.264 video and preserve the original aspect ratio without cropping or upscaling. They are limited to 720 × 1280 for portrait and 1280 × 720 for landscape, with CRF 25 and a 1.8 Mbps video ceiling. The default encoding preset is `veryfast`; 29 previously verified copies made with `fast` were reused, while 295 use `veryfast`. The per-file manifest records each copy's actual settings. Existing audio is encoded as 96 kbps AAC; clips with no audio remain silent. To inspect the prepared bundle without needing any originals or performing another encode:
-
-```bash
-python3 tools/prepare_media.py --verify-bundle
-```
-
-Bundling every video makes the repository, build downloads, and installed app substantially larger than a typical player. Allow enough room on the phone for both the APK download and installation. GitHub Actions artifact storage is account-wide: the [included allowance depends on your GitHub plan](https://docs.github.com/en/actions/reference/limits#storage-limits-for-all-github-hosted-runners). The media bundle alone exceeds GitHub Free's 500 MB included artifact allowance, so check available storage or billing before running an APK build. Remove unneeded build artifacts after downloading them, or account for the storage in your GitHub plan.
-
-The prepared files are tracked in ordinary Git; do not ignore `assets/videos/`. GitHub rejects individual ordinary Git files over 100 MiB. Future media that exceeds that size needs a different storage approach before it is committed. See [GitHub's large-file guidance](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
-
-## Device verification
-
-The automated checks verify the app source, feed logic, media metadata, APK signature, and presence of every video and poster inside the APK. On the target phone, test portrait playback, rapid swiping, sound, pause/resume, backgrounding the app, and a full offline launch in airplane mode. Device installation and hardware video playback still need to be verified on an Android phone.
+The project tests video ordering, prompt loading, optional activity interactions, distinct backgrounds, audio stopping, small-screen layouts, and admin persistence. Bundle verification checks the videos, posters, and counting recordings; GitHub Actions also verifies the final APK's signature and packaged assets.

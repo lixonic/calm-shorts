@@ -24,11 +24,19 @@
         <button class="icon-button info-button" id="info-button" type="button" aria-label="About Calm Reels" aria-expanded="false" aria-controls="about-panel"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.4"/><path d="M12 11v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="7.5" r=".85" fill="currentColor"/></svg></button>
       </header>
 
-      <div class="breath-prompt" id="breath-prompt" hidden>
-        <span class="prompt-leaf" aria-hidden="true">✧</span>
-        <p id="prompt-text">Take a slow, deep breath.</p>
-        <button id="prompt-continue" type="button">Continue</button>
-      </div>
+      <section class="prompt-card" id="calm-prompt" aria-label="A little pause" hidden>
+        <div class="prompt-body">
+          <span class="prompt-eyebrow">A LITTLE PAUSE</span>
+          <p id="prompt-text">You can just rest. That is enough.</p>
+          <div id="activity-cue" class="activity-cue"></div>
+          <button id="hide-cues" class="prompt-secondary" type="button" hidden>Hide leaves</button>
+          <button id="listen-cues" class="listen-cues" type="button" hidden>Listen</button>
+          <div id="prompt-answers" class="prompt-answers" aria-label="Choose a count" hidden></div>
+          <p id="prompt-feedback" class="prompt-note" role="status" aria-live="polite">At your own pace. You can just rest, too.</p>
+        </div>
+        <div class="prompt-actions"><button id="show-answer" class="prompt-secondary" type="button" hidden>Show me</button><button id="prompt-continue" type="button">Continue</button></div>
+        <audio id="activity-audio" preload="none"></audio>
+      </section>
 
       <div class="loading-state" id="loading-state" role="status"><span class="loading-orbit" aria-hidden="true"></span><span>Finding a little wonder…</span></div>
       <div class="media-message" id="media-message" hidden>
@@ -53,7 +61,7 @@
         <span class="about-eyebrow">A LITTLE ROOM TO WANDER</span>
         <h2>Quiet wonder.<br>Fresh every round.</h2>
         <p>Animals, tiny worlds and the gentle outdoors, mixed together in a new order.</p>
-        <p>Each portrait video plays once in a session. After every five reels, a breathing prompt appears. Swipe up to explore, down to revisit.</p>
+        <p>Each portrait video plays once in a session. After every five reels, a gentle, optional activity or quiet pause appears. Swipe up to explore, down to revisit.</p>
         <div class="library-counts" id="library-counts"></div>
         <button class="about-continue" id="about-continue" type="button">Keep wandering <span aria-hidden="true">↗</span></button>
       </section>
@@ -61,6 +69,7 @@
     </section>
     <nav class="desktop-navigation" aria-label="Video navigation"><button id="previous-button" type="button" aria-label="Previous video"><span aria-hidden="true">↓</span> Previous</button><span class="navigation-line" aria-hidden="true"></span><button id="next-button" type="button" aria-label="Next video">Next <span aria-hidden="true">↑</span></button><span class="desktop-help">or use your arrow keys</span></nav>
   </main>
+  <script src="./activities.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:calm_reels/src/breath_prompts.dart';
+import 'package:calm_reels/src/calm_prompts.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -34,6 +34,40 @@ void main() {
     expect(library.prompts.single.id, 'custom');
     expect(library.prompts.single.line, 'Notice a leaf nearby.');
   });
+
+  test(
+    'Activity kinds load from JSON and plain prompts remain compatible',
+    () async {
+      final library = await loadPromptLibrary(
+        bundle: _PromptBundle({
+          'schemaVersion': 1,
+          'promptEvery': 5,
+          'prompts': [
+            {
+              'id': 'count',
+              'line': 'Count the fingers.',
+              'activity': 'fingers',
+            },
+            {'id': 'rest', 'line': 'Rest your hands.'},
+          ],
+        }),
+      );
+      expect(library.prompts.first.activity, PromptActivity.fingers);
+      expect(library.prompts.last.activity, PromptActivity.notice);
+      await expectLater(
+        loadPromptLibrary(
+          bundle: _PromptBundle({
+            'schemaVersion': 1,
+            'promptEvery': 5,
+            'prompts': [
+              {'id': 'bad', 'line': 'Unknown', 'activity': 'unknown'},
+            ],
+          }),
+        ),
+        throwsFormatException,
+      );
+    },
+  );
 
   test('An empty prompt collection disables prompts', () async {
     final library = await loadPromptLibrary(

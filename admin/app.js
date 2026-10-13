@@ -39,6 +39,7 @@
   const duration = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
   const bytes = n => n >= 1e9 ? `${(n / 1e9).toFixed(2)} GB` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.ceil(n / 1000)} KB`;
   const orientation = video => video.orientation || (video.aspectRatio < 1 ? 'portrait' : 'landscape');
+  const activityLabels = { notice: 'Quiet pause', fingers: 'Count fingers', leaves: 'Count leaves', stars: 'Count stars', voices: 'Count hellos', chimes: 'Count chimes', memory: 'Remember leaves' };
   const kind = () => folder === 'prompts' ? 'prompt' : 'video';
   function toast(text, error = false) {
     clearTimeout(toastTimer);
@@ -143,7 +144,7 @@
     thumbnail.addEventListener('click', open);
     const body = element('div', 'card-body');
     const title = element('button', 'card-name', name); title.title = name; title.addEventListener('click', open);
-    const meta = element('div', 'card-meta', isPrompt ? 'Text prompt · Between reels' : `${orientation(entry) === 'portrait' ? 'Portrait' : 'Landscape'} · ${trash ? duration(entry.durationSeconds) : bytes(entry.byteSize)}`);
+    const meta = element('div', 'card-meta', isPrompt ? `${activityLabels[entry.activity || 'notice']} · Between reels` : `${orientation(entry) === 'portrait' ? 'Portrait' : 'Landscape'} · ${trash ? duration(entry.durationSeconds) : bytes(entry.byteSize)}`);
     const menu = element('button', 'card-menu'); menu.innerHTML = icon(trash ? 'restore' : 'more'); menu.setAttribute('aria-label', `${trash ? 'Restore' : 'Details for'} ${name}`); menu.addEventListener('click', open);
     body.append(title, meta, menu);
     if (trash) { const button = element('button', 'restore-card'); button.innerHTML = icon('restore'); button.append(document.createTextNode('Restore')); button.addEventListener('click', open); body.append(button); }
@@ -163,7 +164,7 @@
     editing = { type, entry };
     $('editor-title').textContent = type === 'video' ? 'Video details' : entry ? 'Edit prompt' : 'New prompt';
     $('video-preview').hidden = type !== 'video'; $('video-details').hidden = type !== 'video'; $('name-label').hidden = type !== 'video'; $('prompt-label').hidden = type !== 'prompt';
-    $('editor-error').hidden = true;
+    $('editor-error').hidden = true; $('activity-label').hidden = type !== 'prompt';
     $('editor-remove').hidden = !entry;
     $('save-editor').textContent = entry ? 'Save changes' : 'Add prompt';
     if (type === 'video') {
@@ -171,7 +172,7 @@
       $('preview-video').poster = entry.posterAssetPath ? `/${entry.posterAssetPath}` : '';
       $('video-name').value = entry.title || '';
       $('video-details').textContent = `${entry.width} × ${entry.height} · ${duration(entry.durationSeconds)} · ${bytes(entry.byteSize)} · ${entry.hasAudio ? 'With audio' : 'Silent'}\n${entry.filename}`;
-    } else $('prompt-text').value = entry?.line || '';
+    } else { $('prompt-text').value = entry?.line || ''; $('prompt-activity').value = entry?.activity || 'notice'; }
     $('editor').showModal();
     if (type === 'prompt') $('prompt-text').focus();
   }
@@ -183,7 +184,7 @@
     event.preventDefault(); if (!editing) return;
     $('save-editor').disabled = true;
     try {
-      if (editing.type === 'prompt') await api('/api/prompts/save', { id: editing.entry?.id, line: $('prompt-text').value });
+      if (editing.type === 'prompt') await api('/api/prompts/save', { id: editing.entry?.id, line: $('prompt-text').value, activity: $('prompt-activity').value });
       else await api('/api/videos/rename', { id: editing.entry.id, title: $('video-name').value });
       closeEditor(); await refresh(); toast('Saved to your local library.');
     } catch (error) { $('editor-error').textContent = error.message; $('editor-error').hidden = false; }

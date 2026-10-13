@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import 'breath_prompts.dart';
+import 'calm_prompts.dart';
+import 'prompt_design.dart';
 import 'video_library.dart';
 
 sealed class FeedItem {
@@ -20,9 +21,21 @@ class VideoFeedItem extends FeedItem {
 }
 
 class PromptFeedItem extends FeedItem {
-  const PromptFeedItem(this.prompt);
+  const PromptFeedItem(
+    this.prompt, {
+    this.colors = const [0xff12282a, 0xff325f59, 0xff414f78],
+    this.count = 3,
+  });
 
-  final BreathPrompt prompt;
+  final CalmPrompt prompt;
+  final List<int> colors;
+  final int count;
+
+  String? get soundAsset => switch (prompt.activity) {
+    PromptActivity.voices || PromptActivity.chimes =>
+      'assets/activities/${prompt.activity.name}-$count.m4a',
+    _ => null,
+  };
 }
 
 /// One shuffled pass of videos. After every [promptEvery] clips, a prompt
@@ -31,7 +44,7 @@ class PromptFeedItem extends FeedItem {
 class SessionFeed {
   SessionFeed(
     Iterable<VideoClip> videos, {
-    List<BreathPrompt> prompts = const [],
+    List<CalmPrompt> prompts = const [],
     Random? random,
     this.promptEvery = 5,
   }) : _random = random ?? Random() {
@@ -48,8 +61,9 @@ class SessionFeed {
     }
     pool.shuffle(_random);
     final promptBag = _shuffledPrompts(prompts);
+    final aurora = AuroraColors(_random);
     var promptCursor = 0;
-    BreathPrompt? lastPrompt;
+    CalmPrompt? lastPrompt;
     final items = <FeedItem>[];
     for (var index = 0; index < pool.length; index++) {
       items.add(
@@ -67,7 +81,13 @@ class SessionFeed {
           promptCursor = 0;
         }
         lastPrompt = promptBag[promptCursor++];
-        items.add(PromptFeedItem(lastPrompt));
+        items.add(
+          PromptFeedItem(
+            lastPrompt,
+            colors: aurora.next(),
+            count: 1 + _random.nextInt(5),
+          ),
+        );
       }
     }
     _items = List.unmodifiable(items);
@@ -86,11 +106,11 @@ class SessionFeed {
     return _items[index];
   }
 
-  List<BreathPrompt> _shuffledPrompts(
-    List<BreathPrompt> prompts, {
-    BreathPrompt? avoidFirst,
+  List<CalmPrompt> _shuffledPrompts(
+    List<CalmPrompt> prompts, {
+    CalmPrompt? avoidFirst,
   }) {
-    final bag = List<BreathPrompt>.of(prompts)..shuffle(_random);
+    final bag = List<CalmPrompt>.of(prompts)..shuffle(_random);
     if (bag.length > 1 && avoidFirst != null && bag.first.id == avoidFirst.id) {
       final swapIndex = 1 + _random.nextInt(bag.length - 1);
       final first = bag.first;

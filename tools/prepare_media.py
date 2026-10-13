@@ -264,6 +264,25 @@ def verify_bundle(output_root: Path, jobs: int) -> int:
     if any(not isinstance(p.get("id"), str) or not p["id"] or
            not isinstance(p.get("line"), str) or not p["line"].strip() for p in rows):
         raise RuntimeError("Prompt IDs and text must be nonempty")
+    activity_kinds = {"notice", "fingers", "leaves", "stars", "voices", "chimes", "memory"}
+    if any(p.get("activity", "notice") not in activity_kinds for p in rows):
+        raise RuntimeError("Unknown prompt activity")
+    sound_kinds = {p.get("activity") for p in rows} & {"voices", "chimes"}
+    required_sounds = {output_root / "activities" / f"{kind}-{count}.m4a"
+                       for kind in sound_kinds for count in range(1, 6)}
+    if any(not path.is_file() for path in required_sounds):
+        raise RuntimeError("A counting activity is missing its offline sound")
+    for path in sorted((output_root / "activities").glob("*.m4a")):
+        if not re.fullmatch(r"(?:voices|chimes)-[1-5]\.m4a", path.name):
+            raise RuntimeError("Unknown counting sound asset")
+        audio = json.loads(run_command([
+            "ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)
+        ]).stdout)
+        streams = audio.get("streams", [])
+        if len(streams) != 1 or streams[0].get("codec_type") != "audio" or \
+                streams[0].get("codec_name") != "aac" or streams[0].get("channels") != 1 or \
+                not 0.5 <= float(audio["format"]["duration"]) <= 12:
+            raise RuntimeError("Invalid offline counting sound")
     expected_videos = {item["assetPath"] for item in videos}
     expected_posters = {item["posterAssetPath"] for item in videos if item.get("posterAssetPath")}
     actual_videos = {"assets/" + str(p.relative_to(output_root)) for p in (output_root / "videos").glob("*.mp4")}

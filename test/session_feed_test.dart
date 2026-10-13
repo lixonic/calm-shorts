@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:calm_reels/src/breath_prompts.dart';
+import 'package:calm_reels/src/calm_prompts.dart';
 import 'package:calm_reels/src/session_feed.dart';
 import 'package:calm_reels/src/video_library.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,9 +14,9 @@ VideoClip _clip(String id) => VideoClip(
   hasAudio: true,
 );
 
-List<BreathPrompt> _prompts(int count) => List.generate(
+List<CalmPrompt> _prompts(int count) => List.generate(
   count,
-  (index) => BreathPrompt(id: 'p$index', line: 'Prompt $index'),
+  (index) => CalmPrompt(id: 'p$index', line: 'Prompt $index'),
 );
 
 void main() {
@@ -83,6 +83,41 @@ void main() {
     }
     expect(feed.length, 7);
   });
+
+  test(
+    'All card colors are distinct and counting cues stay stable in history',
+    () {
+      final feed = SessionFeed(
+        List.generate(334, (index) => _clip('video-$index')),
+        prompts: const [
+          CalmPrompt(
+            id: 'voice',
+            line: 'Count the hellos.',
+            activity: PromptActivity.voices,
+          ),
+        ],
+        random: Random(21),
+      );
+      final moments = [
+        for (var index = 0; index < feed.length; index++)
+          if (feed.at(index) case final PromptFeedItem item) item,
+      ];
+      expect(moments, hasLength(66));
+      final colors = moments.expand((item) => item.colors).toList();
+      expect(colors.toSet(), hasLength(colors.length));
+      for (final moment in moments) {
+        expect(moment.count, inInclusiveRange(1, 5));
+        expect(
+          moment.soundAsset,
+          'assets/activities/voices-${moment.count}.m4a',
+        );
+      }
+      final again = feed.at(5) as PromptFeedItem;
+      expect(identical(again, moments.first), isTrue);
+      expect(again.colors, moments.first.colors);
+      expect(again.count, moments.first.count);
+    },
+  );
 
   test('Empty pools and duplicate videos are rejected', () {
     expect(() => SessionFeed(const []), throwsArgumentError);
