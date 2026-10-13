@@ -289,6 +289,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle.kts
+            android/gradle/wrapper/gradle-wrapper.properties
+            android/gradle.properties
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
@@ -331,7 +336,7 @@ jobs:
           trap 'python3 tools/ci_error.py "$RUNNER_TEMP/native-test.log"' ERR
           export PATH="$ANDROID_HOME/platform-tools:$PATH"
           flutter config --jdk-dir "$JAVA_HOME"
-          flutter drive --profile --target=integration_test/performance_test.dart --driver=test_driver/performance_driver.dart --dart-define=CALM_PERF=true --dart-define=CALM_REQUIRE_16KB=true -d emulator-5554
+          flutter drive --profile --no-dds --target=integration_test/performance_test.dart --driver=test_driver/performance_driver.dart --dart-define=CALM_PERF=true --dart-define=CALM_REQUIRE_16KB=true -d emulator-5554
       - name: Collect actual OS background measurements
         run: |
           exec > >(tee "$RUNNER_TEMP/release-probe.log") 2>&1

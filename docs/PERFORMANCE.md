@@ -25,7 +25,7 @@ Install Flutter 3.47.0, Java 17, Android SDK/platform-tools, authorize USB debug
 
 ```bash
 flutter pub get --enforce-lockfile
-flutter drive --profile \
+flutter drive --profile --no-dds \
   --target=integration_test/performance_test.dart \
   --driver=test_driver/performance_driver.dart \
   --dart-define=CALM_PERF=true \
