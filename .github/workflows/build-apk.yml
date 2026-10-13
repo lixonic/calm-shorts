@@ -155,7 +155,10 @@ jobs:
           PY
 
       - name: Build APK for Android phones
-        run: flutter build apk --release --target-platform android-arm,android-arm64 --build-number "$GITHUB_RUN_NUMBER"
+        run: |
+          exec > >(tee "$RUNNER_TEMP/apk-build.log") 2>&1
+          trap 'python3 tools/ci_error.py "$RUNNER_TEMP/apk-build.log"' ERR
+          flutter build apk --release --target-platform android-arm,android-arm64 --build-number "$GITHUB_RUN_NUMBER"
 
       - name: Build Play app bundle
         run: flutter build appbundle --release --target-platform android-arm,android-arm64 --build-number "$GITHUB_RUN_NUMBER"
@@ -282,6 +285,9 @@ jobs:
         run: flutter pub get --enforce-lockfile
       - name: Start 16 KB emulator
         run: |
+          exec > >(tee "$RUNNER_TEMP/emulator-setup.log") 2>&1
+          trap 'python3 tools/ci_error.py "$RUNNER_TEMP/emulator-setup.log"' ERR
+          export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
           sudo chmod a+rw /dev/kvm
           set +o pipefail
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
@@ -302,10 +308,16 @@ jobs:
           adb shell settings put global animator_duration_scale 0
       - name: Exercise native swipes and resource restoration
         run: |
+          exec > >(tee "$RUNNER_TEMP/native-test.log") 2>&1
+          trap 'python3 tools/ci_error.py "$RUNNER_TEMP/native-test.log"' ERR
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
           flutter config --jdk-dir "$JAVA_HOME"
           flutter drive --profile --target=integration_test/performance_test.dart --driver=test_driver/performance_driver.dart --dart-define=CALM_PERF=true --dart-define=CALM_REQUIRE_16KB=true -d emulator-5554
       - name: Collect actual OS background measurements
         run: |
+          exec > >(tee "$RUNNER_TEMP/release-probe.log") 2>&1
+          trap 'python3 tools/ci_error.py "$RUNNER_TEMP/release-probe.log"' ERR
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
           flutter build apk --release --target-platform android-x64 --build-number "$GITHUB_RUN_NUMBER"
           python3 tools/profile_android.py --serial emulator-5554 --apk build/app/outputs/flutter-apk/app-release.apk --output build/performance/android-release.json
       - name: Save test reports and emulator logs
