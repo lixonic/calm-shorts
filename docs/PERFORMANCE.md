@@ -15,7 +15,7 @@ Calm Reels 1.2 adds a 16 MiB / 48-entry poster cache, hidden-state cache trimmin
 - A separate release APK probe uses actual Android Home/return transitions and records startup timing, foreground/background/restored `dumpsys meminfo`, power state, and battery diagnostics.
 - Public APK publishing waits for both the build checks and the native smoke test.
 
-The **Play-bundle** and **Android-performance** artifacts in Actions contain the AAB and diagnostic reports. Development/test plugins are excluded from release by Flutter's Gradle plugin. Playback telemetry is enabled only by `CALM_PERF=true`; the native memory channel is available only in debug/profile builds.
+The **Android-quality** and **Android-performance** artifacts in Actions contain diagnostic reports. The AAB is built and checked on each run; use the manual workflow’s **keep_play_bundle** checkbox to retain its download too. This avoids storing a second large artifact on every push. Development/test plugins are excluded from release by Flutter's Gradle plugin. Playback telemetry is enabled only by `CALM_PERF=true`; the native memory channel is available only in debug/profile builds.
 
 ## Profile a connected Android phone
 

@@ -2,6 +2,11 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      keep_play_bundle:
+        description: 'Save the future-use AAB as a temporary Actions download'
+        type: boolean
+        default: false
   push:
   pull_request:
 
@@ -189,13 +194,20 @@ jobs:
           python3 tools/check_play_download.py build/quality/play-download.csv > build/quality/play-download.json
           cat build/quality/play-download.json
 
-      - name: Upload Play bundle and quality reports
+      - name: Upload quality reports
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Calm-Reels-Android-quality-${{ github.run_number }}
+          path: build/quality/
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload optional Play bundle
+        if: github.event_name == 'workflow_dispatch' && inputs.keep_play_bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Calm-Reels-Play-bundle-${{ github.run_number }}
-          path: |
-            build/app/outputs/bundle/release/app-release.aab
-            build/quality/
+          path: build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 1
 
@@ -228,7 +240,7 @@ jobs:
             printf '### Calm Reels APK\n\n'
             printf '[Download the APK](%s) (GitHub sign-in required).\n\n' "$APK_URL"
             printf 'Signing: **%s**. All videos are bundled for offline playback.\n\n' "$SIGNING_MODE"
-            printf 'The APK expires from Actions after 7 days. Save a local copy.\n'
+            printf 'The APK expires from Actions after 1 day. Save a local copy.\n'
             if [[ "$SIGNING_MODE" == personal ]]; then
               printf '\nThis personal test build uses a development signing key. Another runner may use a different key; uninstall the previous personal build before installing if Android rejects the update.\n'
             fi

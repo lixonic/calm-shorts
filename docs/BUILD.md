@@ -180,6 +180,6 @@ The previous breathing-prompt collection was backed up locally at `.local-admin/
 
 ## Performance and future Play bundle
 
-The current workflow also creates an AAB, checks its bundled content, and measures the largest compressed download with Google's pinned bundletool. This is a future-use build artifact; the current personal signing mode is for testing, and the workflow does not submit to Google Play. Both APK and AAB enforce project size budgets.
+The current workflow also creates an AAB, checks its bundled content, and measures the largest compressed download with Google's pinned bundletool. Use **keep_play_bundle** when manually running the workflow to keep an AAB download. Its size/content checks run on every build, while retaining that extra large artifact is optional. This is a future-use build artifact; the current personal signing mode is for testing, and the workflow does not submit to Google Play. Both APK and AAB enforce project size budgets.
 
 Public APK publishing waits for native playback/resource tests on a 16 KB Android emulator. See [the performance guide](PERFORMANCE.md) for reports, physical-phone profiling commands, and the distinction between emulator compatibility tests and real-device performance measurements.
