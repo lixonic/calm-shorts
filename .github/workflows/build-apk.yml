@@ -185,6 +185,7 @@ jobs:
               prompts = json.loads(archive.read(prefix + 'assets/prompts.json'))
               assert prompts == json.loads(Path('assets/prompts.json').read_text()), 'APK prompts differ from the editable catalog.'
               assert not any(name.startswith(prefix + 'admin/') or '.local-admin/' in name for name in archive.namelist()), 'Local admin files must not be bundled.'
+              assert not any(name.startswith(prefix + 'assets/new-videos/') for name in archive.namelist()), 'Incoming originals must not be bundled.'
               for architecture in ('armeabi-v7a', 'arm64-v8a'):
                   archive.getinfo(f'lib/{architecture}/libflutter.so')
               print(f'Verified {len(videos)} bundled videos and both phone architectures. APK: {apk.stat().st_size / 1_000_000:.1f} MB.')

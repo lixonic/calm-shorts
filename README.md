@@ -1,6 +1,6 @@
 # Calm Reels
 
-An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **302 unique videos, all portrait**. The fullscreen viewer plays this portrait collection; the admin provides aspect folders for managing uploads. Filename themes do not control playback order.
+An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **334 unique videos, all portrait**. The fullscreen viewer plays this portrait collection; the admin provides aspect folders for managing uploads. Filename themes do not control playback order.
 
 Each session plays the portrait videos in a shuffled order without repeating them. Swiping back intentionally revisits your viewing history. Videos advance when they finish, and you can swipe ahead whenever you like. Tap a video to pause or resume it, and use the sound control to mute or unmute playback. Text prompts appear between videos at an editable interval (initially five videos). The viewer does not display video names or titles.
 
@@ -117,9 +117,9 @@ The local output is `build/app/outputs/flutter-apk/app-release.apk`. Local build
 
 ## Bundled media and storage
 
-The eight byte-identical duplicate copies are excluded. Individual clips and assembled edits both remain available. The original collection is unchanged; the app uses prepared copies and a catalog under `assets/`.
+Byte-identical duplicate copies are skipped when adding videos. Individual clips and assembled edits both remain available. The original collection is unchanged; the app uses prepared copies and a catalog under `assets/`.
 
-The active portrait bundle contains **475.3 MB of videos** plus **4.7 MB of posters**, about **480 MB total** before the app code and Android libraries are added. These are decimal MB. The preparation summary and manifest retain the initial compression measurements and original source mappings. The final APK size is measured after building.
+The active portrait bundle contains **521.6 MB of videos** plus **5.2 MB of posters**, about **527 MB total** before the app code and Android libraries are added. These are decimal MB. The preparation summary and manifest retain the initial compression measurements and original source mappings. The final APK size is measured after building.
 
 | File or directory | Purpose |
 | --- | --- |
@@ -127,10 +127,11 @@ The active portrait bundle contains **475.3 MB of videos** plus **4.7 MB of post
 | `assets/prompts.json` | Editable prompt collection and spacing between videos. |
 | `assets/videos/` | Prepared MP4 videos named by catalog ID. |
 | `assets/posters/` | JPEG thumbnails shown while a video loads. |
+| `assets/new-videos/` | Incoming originals, excluded from Git and APK builds. |
 | `tools/media_preparation_summary.json` | Measured media sizes and preparation settings. |
 | `tools/media_preparation_manifest.json` | Mapping from original files to bundled copies. |
 
-For new content, use the local admin. To recreate the initial collection using its original external catalog, install FFmpeg and explicitly provide the original media location:
+For new content, use the local admin. If you place originals in `assets/new-videos/`, upload them through the admin to create the official copies before deleting that incoming folder. The originals in that folder are ignored by Git and are never included in the APK. To recreate the initial collection using its original external catalog, install FFmpeg and explicitly provide the original media location:
 
 ```bash
 python3 tools/prepare_media.py \

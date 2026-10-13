@@ -33,3 +33,6 @@ calm-reels-upload.base64.txt
 
 # Local admin uploads, originals, trash, and runtime locks are never bundled.
 .local-admin/
+
+# Incoming source files are prepared into the official video and poster folders.
+assets/new-videos/
