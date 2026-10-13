@@ -1,6 +1,6 @@
 # Calm Reels
 
-An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **334 unique videos, all portrait**. The fullscreen viewer plays this portrait collection; the admin provides aspect folders for managing uploads. Filename themes do not control playback order.
+An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **334 unique videos, all portrait**. The fullscreen viewer plays this portrait collection; the admin provides content folders for managing uploads. Filename themes do not control playback order.
 
 Each session plays the portrait videos in a shuffled order without repeating them. Swiping back intentionally revisits your viewing history. Videos advance when they finish, and you can swipe ahead whenever you like. Tap a video to pause or resume it, and use the sound control to mute or unmute playback. Text prompts appear between videos at an editable interval (initially five videos). The viewer does not display video names or titles.
 
@@ -14,7 +14,7 @@ The admin is a tool for your computer, **not a screen inside the Android app**. 
 python3 tools/admin_server.py
 ```
 
-Open [the local admin](http://127.0.0.1:8767/admin/). The sidebar contains **All videos**, **Portrait**, **Landscape**, **Text prompts**, and **Recently removed**. You can search, switch between grid and list views, preview videos, edit library names, select multiple files, and upload or drag files into the window. Library names are only shown in the admin.
+Open [the local admin](http://127.0.0.1:8767/admin/). The sidebar contains **All videos**, **Portrait**, **Text prompts**, and **Recently removed**. You can search, switch between grid and list views, preview videos, edit library names, select multiple files, and upload or drag files into the window. Library names are only shown in the admin.
 
 - Video uploads are automatically converted to H.264/AAC MP4s and JPEG posters in `assets/videos/` and `assets/posters/`, and added to `assets/library.json`. Aspect folders are assigned automatically. Raw uploaded originals are retained locally in `.local-admin/originals/`; they are excluded from Git and the APK. MP4, MOV, M4V, MKV, WebM, and AVI inputs are supported, up to 2 GB per input and under 100 MB per prepared file.
 - Add or edit text prompts directly, or import a TXT file with one prompt per nonempty line. JSON imports accept a list of strings or a `prompts` list containing objects with `line` fields. Prompts and spacing are saved in `assets/prompts.json`, shared by the browser viewer and Flutter app. Removing all prompts disables interstitial prompts.
@@ -153,4 +153,4 @@ The prepared files are tracked in ordinary Git; do not ignore `assets/videos/`. 
 
 ## Device verification
 
-The automated checks verify the app source, feed logic, media metadata, APK signature, and presence of every video and poster inside the APK. On the target phone, test portrait and landscape playback, rapid swiping, sound, pause/resume, backgrounding the app, and a full offline launch in airplane mode. Device installation and hardware video playback still need to be verified on an Android phone.
+The automated checks verify the app source, feed logic, media metadata, APK signature, and presence of every video and poster inside the APK. On the target phone, test portrait playback, rapid swiping, sound, pause/resume, backgrounding the app, and a full offline launch in airplane mode. Device installation and hardware video playback still need to be verified on an Android phone.
