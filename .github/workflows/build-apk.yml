@@ -203,6 +203,13 @@ jobs:
           java -jar "$RUNNER_TEMP/bundletool.jar" get-size total --apks="$RUNNER_TEMP/calm.apks" > build/quality/play-download.csv
           python3 tools/check_play_download.py build/quality/play-download.csv > build/quality/play-download.json
           cat build/quality/play-download.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          apk = json.loads(Path('build/quality/apk.json').read_text())
+          size = json.loads(Path('build/quality/play-download.json').read_text())
+          print('::notice title=Verified download sizes::' + json.dumps({'apkBytes': apk['artifactBytes'], 'playDownloadBytes': size['maximumCompressedDownloadBytes'], 'dexBytes': apk['dexBytes']}))
+          PY
 
       - name: Upload quality reports
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -295,12 +302,17 @@ jobs:
           exec > >(tee "$RUNNER_TEMP/emulator-setup.log") 2>&1
           trap 'python3 tools/ci_error.py "$RUNNER_TEMP/emulator-setup.log"; python3 tools/ci_error.py "$RUNNER_TEMP/emulator.log"' ERR
           export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+          export ANDROID_USER_HOME="$RUNNER_TEMP/calm-android-user"
+          export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
           sudo chmod a+rw /dev/kvm
           set +o pipefail
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           set -o pipefail
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis_ps16k;x86_64' 'emulator'
-          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --name calm-16k --package 'system-images;android-35;google_apis_ps16k;x86_64' --device pixel_2
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --name calm-16k --package 'system-images;android-35;google_apis_ps16k;x86_64' --device pixel_2 --force --path "$ANDROID_AVD_HOME/calm-16k.avd"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" list avd
+          test -f "$ANDROID_AVD_HOME/calm-16k.ini"
           "$ANDROID_HOME/emulator/emulator" -avd calm-16k -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 4096 > "$RUNNER_TEMP/emulator.log" 2>&1 &
           timeout 180 adb wait-for-device
           for attempt in $(seq 1 90); do
@@ -327,6 +339,9 @@ jobs:
           export PATH="$ANDROID_HOME/platform-tools:$PATH"
           flutter build apk --release --target-platform android-x64 --build-number "$GITHUB_RUN_NUMBER"
           python3 tools/profile_android.py --serial emulator-5554 --apk build/app/outputs/flutter-apk/app-release.apk --output build/performance/android-release.json
+      - name: Report native test measurements
+        if: always()
+        run: python3 tools/report_native.py
       - name: Save test reports and emulator logs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

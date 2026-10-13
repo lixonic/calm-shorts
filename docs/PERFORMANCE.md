@@ -11,7 +11,7 @@ Calm Reels 1.2 adds a 16 MiB / 48-entry poster cache, hidden-state cache trimmin
 - Native ELF load segments must support 16 KB pages. Native library ZIP payloads in the APK must also be aligned to 16 KB.
 - Offline media is capped at **461 MB**, the universal phone APK at **495 MB**, and bundletool's largest compressed Play download at **480 MB**. These are project budgets with headroom, not Google's limits. Uploads and restores that would exceed the media budget are rejected before finalizing the change.
 - The pinned Google bundletool JAR is checked against its SHA-256 digest before use.
-- A 16 KB Android 15 emulator exercises native playback, 100 next actions, controller resource bounds, position restoration after hidden cleanup, and bundled AAC stopping. It records first-playable timing, Flutter frame timings, process memory, and resource counts.
+- A 16 KB Android 15 emulator exercises native playback, 100 next actions and 20 backward swipes, controller resource bounds, position restoration after hidden cleanup, and bundled AAC stopping. It records first-playable timing, Flutter frame timings, process memory, and resource counts.
 - A separate release APK probe uses actual Android Home/return transitions and records startup timing, foreground/background/restored `dumpsys meminfo`, power state, and battery diagnostics.
 - Public APK publishing waits for both the build checks and the native smoke test.
 

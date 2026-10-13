@@ -20,7 +20,7 @@ For the app category on a 4 GB device, the published P90 memory thresholds are *
 - A native 16 KB emulator job exercises playback, repeated swipes, hidden cleanup/restoration, resource bounds, and AAC stopping. Reports include Flutter frame timings, initialization latency, process memory, OS background measurements, and wake-lock diagnostics. Publishing waits for that job.
 - The workflow produces an AAB alongside the APK for future use. **Temporary signing remains in place**, as requested, and nothing is submitted to Play.
 
-Implementation checks: **30 Flutter tests and 12 Python tests** passed, and analysis found no issues. The native CI job verifies the Android build and runtime; inspect its reports for the release you are assessing. [Performance guide](PERFORMANCE.md).
+Implementation checks: **31 Flutter tests and 12 Python tests** passed, and analysis found no issues. The native CI job verifies the Android build and runtime; inspect its reports for the release you are assessing. [Performance guide](PERFORMANCE.md).
 
 The earlier APK already targeted API 36, passed static 16 KB alignment checks, and contained only 1.73 MB of DEX. The SDK/R8 defaults remain suitable. The new release is checked again by CI; the earlier inspection below is historical evidence rather than a measurement of the new APK.
 

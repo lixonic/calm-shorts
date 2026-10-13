@@ -61,6 +61,14 @@ void main() {
         }
       }, reportKey: 'swipeFrames');
       final afterSwipes = await memory();
+      await binding.watchPerformance(() async {
+        for (var index = 0; index < 20; index++) {
+          await tester.drag(find.byType(PageView), const Offset(0, 450));
+          await tester.pump(const Duration(milliseconds: 400));
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          expect(PlaybackMetrics.live, lessThanOrEqualTo(4));
+        }
+      }, reportKey: 'backwardSwipeFrames');
 
       // Ensure the current card is a video and stop it before the lifecycle probe.
       while (tester

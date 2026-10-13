@@ -365,6 +365,27 @@ void main() {
     await removePlayers(tester);
   });
 
+  testWidgets('initialization cannot start playback after hidden cleanup', (
+    tester,
+  ) async {
+    await pumpPlayer(tester);
+    final first = platform.players.keys.single;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pump(const Duration(seconds: 3));
+    platform.initialize(first);
+    await flushDisposals(tester);
+    expect(platform.disposedIds, contains(first));
+    expect(platform.players[first]!.playCount, 0);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    final restored = platform.players.keys.last;
+    platform.initialize(restored);
+    await tester.pump();
+    await tester.pump();
+    expect(platform.players[restored]!.playing, isTrue);
+    await removePlayers(tester);
+  });
+
   testWidgets('disposal before initialization ignores late platform events', (
     tester,
   ) async {
