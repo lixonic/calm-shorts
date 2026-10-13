@@ -76,8 +76,6 @@ Choose a prompt's text and activity type in its editor:
 
 ![The real prompt editor showing the Count fingers activity type](docs/screenshots/prompt-editor.jpg)
 
-Uploads create official MP4s and posters in the local project. **Remove from APK** moves an item into recoverable local trash and removes it from the next bundle. Incoming originals in `assets/new-videos/` stay out of Git and APK builds. Commit and push the official changes to publish an updated APK through GitHub Actions.
-
 ## Run the preview locally
 
 With Python 3 and FFmpeg installed, run this from the project directory:

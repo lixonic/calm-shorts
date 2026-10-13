@@ -1,0 +1,115 @@
+{
+  "release": "apk-10-1",
+  "commit": "8006efd31dde7a08643d6182628b81a272eff50f",
+  "apkBytes": 556813895,
+  "dexBytes": 1725160,
+  "dexFiles": 1,
+  "compressedZipPayloadBytes": 556610659,
+  "videosUncompressedBytes": 521562738,
+  "videosCompressedBytes": 521562740,
+  "nativeLibraries": [
+    {
+      "name": "lib/arm64-v8a/libapp.so",
+      "bits": 64,
+      "zipStored": true,
+      "zipDataOffset": 901120,
+      "zip16KBAligned": true,
+      "loadSegmentAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "elf16KBAligned": true
+    },
+    {
+      "name": "lib/arm64-v8a/libflutter.so",
+      "bits": 64,
+      "zipStored": true,
+      "zipDataOffset": 4784128,
+      "zip16KBAligned": true,
+      "loadSegmentAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "elf16KBAligned": true
+    },
+    {
+      "name": "lib/armeabi-v7a/libapp.so",
+      "bits": 32,
+      "zipStored": true,
+      "zipDataOffset": 16547840,
+      "zip16KBAligned": true,
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "elf16KBAligned": true
+    },
+    {
+      "name": "lib/armeabi-v7a/libflutter.so",
+      "bits": 32,
+      "zipStored": true,
+      "zipDataOffset": 20889600,
+      "zip16KBAligned": true,
+      "loadSegmentAlignments": [
+        65536,
+        65536,
+        65536
+      ],
+      "elf16KBAligned": true
+    }
+  ],
+  "bytesFetched": 339300,
+  "requests": 14,
+  "manifest": [
+    {
+      "tag": "manifest",
+      "attributes": {
+        "versionCode": 10,
+        "versionName": "1.1.0",
+        "compileSdkVersion": 36,
+        "compileSdkVersionCodename": "16",
+        "package": "dev.calmshorts.reels",
+        "platformBuildVersionCode": 36,
+        "platformBuildVersionName": 16
+      }
+    },
+    {
+      "tag": "uses-sdk",
+      "attributes": {
+        "minSdkVersion": 24,
+        "targetSdkVersion": 36
+      }
+    },
+    {
+      "tag": "uses-permission",
+      "attributes": {
+        "name": "android.permission.ACCESS_NETWORK_STATE"
+      }
+    },
+    {
+      "tag": "uses-permission",
+      "attributes": {
+        "name": "android.permission.WAKE_LOCK"
+      }
+    },
+    {
+      "tag": "uses-permission",
+      "attributes": {
+        "name": "dev.calmshorts.reels.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+      }
+    },
+    {
+      "tag": "application",
+      "attributes": {
+        "label": "Calm Reels",
+        "icon": 2131099654,
+        "name": "android.app.Application",
+        "extractNativeLibs": false,
+        "appComponentFactory": "androidx.core.app.CoreComponentFactory"
+      }
+    }
+  ]
+}
