@@ -1,6 +1,6 @@
 # Calm Reels
 
-An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **324 unique videos**: **302 portrait** and **22 landscape**. The current fullscreen viewer plays the portrait collection; the admin organizes both orientations. Filename themes do not control playback order.
+An offline Flutter viewer for the CALM SHORTS collection, with a separate browser admin for managing content on your computer. The current bundle contains **302 unique videos, all portrait**. The fullscreen viewer plays this portrait collection; the admin provides aspect folders for managing uploads. Filename themes do not control playback order.
 
 Each session plays the portrait videos in a shuffled order without repeating them. Swiping back intentionally revisits your viewing history. Videos advance when they finish, and you can swipe ahead whenever you like. Tap a video to pause or resume it, and use the sound control to mute or unmute playback. Text prompts appear between videos at an editable interval (initially five videos). The viewer does not display video names or titles.
 
@@ -119,7 +119,7 @@ The local output is `build/app/outputs/flutter-apk/app-release.apk`. Local build
 
 The eight byte-identical duplicate copies are excluded. Individual clips and assembled edits both remain available. The original collection is unchanged; the app uses prepared copies and a catalog under `assets/`.
 
-The completed bundle contains **545.1 MB of videos** plus **4.9 MB of posters**, or **550.0 MB total** before the app code and Android libraries are added. The video copies are approximately **77% smaller** than the original 2.34 GB collection. These are decimal MB; the whole media bundle is about 524.5 MiB. The final APK size is measured after building.
+The active portrait bundle contains **475.3 MB of videos** plus **4.7 MB of posters**, about **480 MB total** before the app code and Android libraries are added. These are decimal MB. The preparation summary and manifest retain the initial compression measurements and original source mappings. The final APK size is measured after building.
 
 | File or directory | Purpose |
 | --- | --- |
