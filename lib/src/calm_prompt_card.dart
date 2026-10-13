@@ -24,7 +24,8 @@ class CalmPromptCard extends StatefulWidget {
   State<CalmPromptCard> createState() => _CalmPromptCardState();
 }
 
-class _CalmPromptCardState extends State<CalmPromptCard> {
+class _CalmPromptCardState extends State<CalmPromptCard>
+    with WidgetsBindingObserver {
   late final ActivitySound _sound;
   var _playing = false;
   var _hidden = false;
@@ -39,6 +40,7 @@ class _CalmPromptCardState extends State<CalmPromptCard> {
   void initState() {
     super.initState();
     _sound = widget.sound ?? OfflineActivitySound();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -46,6 +48,14 @@ class _CalmPromptCardState extends State<CalmPromptCard> {
     super.didUpdateWidget(oldWidget);
     if (!widget.active && oldWidget.active) _stop();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _stop();
+  }
+
+  @override
+  void didHaveMemoryPressure() => _stop();
 
   void _stop() {
     _audioGeneration++;
@@ -97,6 +107,7 @@ class _CalmPromptCardState extends State<CalmPromptCard> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _audioGeneration++;
     unawaited(_sound.stop());
     super.dispose();

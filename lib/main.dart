@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'src/reels_screen.dart';
 import 'src/calm_prompts.dart';
 import 'src/video_library.dart';
+import 'src/app_memory.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +60,20 @@ class _LibraryLoader extends StatefulWidget {
 }
 
 class _LibraryLoaderState extends State<_LibraryLoader> {
+  late final AppMemory _memory;
+
+  @override
+  void initState() {
+    super.initState();
+    _memory = AppMemory()..attach();
+  }
+
+  @override
+  void dispose() {
+    _memory.dispose();
+    super.dispose();
+  }
+
   Future<({List<VideoClip> clips, PromptLibrary prompts})>
   _loadLibrary() async {
     final clips = await loadVideoLibrary();

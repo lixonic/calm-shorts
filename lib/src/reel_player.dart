@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import 'video_library.dart';
+import 'playback_metrics.dart';
 
 class ReelPlayer extends StatefulWidget {
   const ReelPlayer({
@@ -31,8 +32,14 @@ class ReelPlayer extends StatefulWidget {
   State<ReelPlayer> createState() => _ReelPlayerState();
 }
 
-class _ReelPlayerState extends State<ReelPlayer> {
+class _ReelPlayerState extends State<ReelPlayer> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
+  Timer? _releaseTimer;
+  Future<void> _releasing = Future.value();
+  Duration _savedPosition = Duration.zero;
+  bool _foreground = true;
+  bool _resourcesAvailable = true;
+  bool _restartPending = false;
   bool _failed = false;
   bool _finishedNotified = false;
   bool _completionScheduled = false;
@@ -41,22 +48,42 @@ class _ReelPlayerState extends State<ReelPlayer> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+    _resourcesAvailable =
+        lifecycle != AppLifecycleState.hidden &&
+        lifecycle != AppLifecycleState.paused &&
+        lifecycle != AppLifecycleState.detached;
     unawaited(_initialize());
   }
 
   Future<void> _initialize() async {
+    await _releasing;
+    if (!mounted || !_resourcesAvailable || _controller != null) return;
     final controller = VideoPlayerController.asset(
       widget.clip.assetPath,
-      // The reel screen owns lifecycle playback so resumed clips cannot rewind.
+      // This observer owns pause and decoder release, independently of redraws.
       videoPlayerOptions: VideoPlayerOptions(allowBackgroundPlayback: true),
     );
+    final stopwatch = monitorPlayback ? (Stopwatch()..start()) : null;
     _controller = controller;
+    PlaybackMetrics.opened();
     controller.addListener(_onPlayback);
     try {
       await controller.initialize();
       if (!mounted || _controller != controller) return;
       await controller.setLooping(false);
       if (!mounted || _controller != controller) return;
+      final position = _restartPending ? Duration.zero : _savedPosition;
+      if (position > Duration.zero || _restartPending) {
+        await controller.seekTo(position);
+      }
+      if (!mounted || _controller != controller) return;
+      _restartPending = false;
+      if (stopwatch != null) {
+        PlaybackMetrics.initializationMs.add(stopwatch.elapsedMilliseconds);
+      }
       setState(() => _failed = false);
       await _syncPlayback();
     } catch (_) {
@@ -66,13 +93,87 @@ class _ReelPlayerState extends State<ReelPlayer> {
     }
   }
 
+  Future<void> _releaseController() {
+    final controller = _controller;
+    if (controller == null) return _releasing;
+    _controller = null;
+    _playbackRevision++;
+    _completionScheduled = false;
+    controller.removeListener(_onPlayback);
+    if (controller.value.isInitialized) {
+      _savedPosition = controller.value.position;
+    }
+    return _releasing = () async {
+      try {
+        if (controller.value.isInitialized) {
+          await controller.pause();
+          _savedPosition = await controller.position ?? _savedPosition;
+        }
+      } catch (_) {
+        // Keep the last reported position if the platform is already gone.
+      } finally {
+        var failed = false;
+        try {
+          await controller.dispose();
+        } catch (_) {
+          // The OS may already have removed the platform player. Cleanup must
+          // not leave an unhandled future or prevent a later initialization.
+          failed = true;
+        } finally {
+          PlaybackMetrics.closed(failed: failed);
+        }
+      }
+    }();
+  }
+
+  void _releaseHiddenResources() {
+    _resourcesAvailable = false;
+    unawaited(_releaseController());
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _releaseTimer?.cancel();
+    if (_foreground) {
+      _resourcesAvailable = true;
+      if (_controller == null) {
+        unawaited(_initialize());
+      } else {
+        unawaited(_syncPlayback());
+      }
+    } else {
+      // Pause immediately, even when no background UI frame will be rendered.
+      unawaited(_syncPlayback());
+      if (state == AppLifecycleState.hidden ||
+          state == AppLifecycleState.paused) {
+        _releaseTimer = Timer(
+          const Duration(seconds: 2),
+          _releaseHiddenResources,
+        );
+      } else if (state == AppLifecycleState.detached) {
+        _releaseHiddenResources();
+      }
+    }
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    unawaited(() async {
+      await _releaseController();
+      if (!mounted) return;
+      setState(() {});
+      // Recreate only the visible player; neighbors wait until requested.
+      if (_foreground && widget.isCurrent) await _initialize();
+    }());
+  }
+
   void _onPlayback() {
     final controller = _controller;
     if (!mounted || controller == null) return;
     final value = controller.value;
-    if (value.hasError && !_failed) {
-      setState(() => _failed = true);
-    }
+    if (value.hasError && !_failed) setState(() => _failed = true);
     if (!_finishedNotified &&
         !_completionScheduled &&
         value.isInitialized &&
@@ -81,6 +182,7 @@ class _ReelPlayerState extends State<ReelPlayer> {
         value.position >= value.duration &&
         widget.isCurrent &&
         widget.active &&
+        _foreground &&
         !widget.paused) {
       _completionScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,6 +190,7 @@ class _ReelPlayerState extends State<ReelPlayer> {
         if (mounted &&
             widget.isCurrent &&
             widget.active &&
+            _foreground &&
             !widget.paused &&
             controller == _controller &&
             controller.value.position >= controller.value.duration) {
@@ -105,8 +208,11 @@ class _ReelPlayerState extends State<ReelPlayer> {
     final returningToHistory = widget.isCurrent && !oldWidget.isCurrent;
     if (returningToHistory) {
       _finishedNotified = false;
+      _restartPending = true;
     }
-    if (returningToHistory ||
+    if (_controller == null && _resourcesAvailable && widget.isCurrent) {
+      unawaited(_initialize());
+    } else if (returningToHistory ||
         widget.active != oldWidget.active ||
         widget.paused != oldWidget.paused ||
         widget.muted != oldWidget.muted) {
@@ -127,15 +233,21 @@ class _ReelPlayerState extends State<ReelPlayer> {
           revision != _playbackRevision) {
         return;
       }
-      if (restart) await controller.seekTo(Duration.zero);
-      if (!mounted || revision != _playbackRevision) return;
-      if (widget.active && !widget.paused) {
+      if (restart) {
+        await controller.seekTo(Duration.zero);
+        if (mounted && controller == _controller) _restartPending = false;
+      }
+      if (!mounted ||
+          controller != _controller ||
+          revision != _playbackRevision) {
+        return;
+      }
+      if (widget.active && _foreground && !widget.paused) {
         if (controller.value.duration > Duration.zero &&
             controller.value.position >= controller.value.duration) {
           _onPlayback();
           return;
         }
-        if (!mounted || revision != _playbackRevision) return;
         await controller.play();
       } else {
         await controller.pause();
@@ -146,11 +258,8 @@ class _ReelPlayerState extends State<ReelPlayer> {
   }
 
   Future<void> _retry() async {
-    final previous = _controller;
-    _controller = null;
-    _playbackRevision++;
-    previous?.removeListener(_onPlayback);
-    if (previous != null) await previous.dispose();
+    _restartPending = true;
+    await _releaseController();
     if (!mounted) return;
     setState(() {
       _failed = false;
@@ -161,9 +270,9 @@ class _ReelPlayerState extends State<ReelPlayer> {
 
   @override
   void dispose() {
-    _playbackRevision++;
-    _controller?.removeListener(_onPlayback);
-    unawaited(_controller?.dispose());
+    _releaseTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_releaseController());
     super.dispose();
   }
 
@@ -175,7 +284,9 @@ class _ReelPlayerState extends State<ReelPlayer> {
       fit: StackFit.expand,
       children: [
         const ColoredBox(color: Color(0xff101410)),
-        if (!initialized && widget.clip.posterAssetPath != null)
+        if (!initialized &&
+            _resourcesAvailable &&
+            widget.clip.posterAssetPath != null)
           Image.asset(widget.clip.posterAssetPath!, fit: BoxFit.cover),
         if (initialized && !_failed && controller != null)
           ClipRect(

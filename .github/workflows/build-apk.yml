@@ -78,7 +78,7 @@ jobs:
         run: flutter pub get --enforce-lockfile
 
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib test integration_test test_driver
 
       - name: Analyze app
         run: flutter analyze
@@ -152,6 +152,9 @@ jobs:
       - name: Build APK for Android phones
         run: flutter build apk --release --target-platform android-arm,android-arm64 --build-number "$GITHUB_RUN_NUMBER"
 
+      - name: Build Play app bundle
+        run: flutter build appbundle --release --target-platform android-arm,android-arm64 --build-number "$GITHUB_RUN_NUMBER"
+
       - name: Verify APK signature and offline library
         run: |
           python3 - <<'PY'
@@ -169,29 +172,32 @@ jobs:
           signer = max(candidates, key=lambda path: [int(part) for part in re.findall(r'\d+', path.parent.name)])
           subprocess.run([str(signer), 'verify', '--verbose', str(apk)], check=True)
 
-          prefix = 'assets/flutter_assets/'
-          with zipfile.ZipFile(apk) as archive:
-              library = json.loads(archive.read(prefix + 'assets/library.json'))
-              videos = library['videos']
-              expected = set()
-              for video in videos:
-                  for field in ('assetPath', 'posterAssetPath'):
-                      asset = video[field]
-                      bundled = archive.getinfo(prefix + asset)
-                      assert bundled.file_size == Path(asset).stat().st_size, f'APK asset differs: {asset}'
-                  expected.add(prefix + video['assetPath'])
-              packaged = {name for name in archive.namelist() if name.startswith(prefix + 'assets/videos/') and name.endswith('.mp4')}
-              assert packaged == expected, 'APK video list does not match the catalog.'
-              for sound in Path('assets/activities').glob('*.m4a'):
-                  assert archive.read(prefix + sound.as_posix()) == sound.read_bytes(), f'APK sound differs: {sound}'
-              prompts = json.loads(archive.read(prefix + 'assets/prompts.json'))
-              assert prompts == json.loads(Path('assets/prompts.json').read_text()), 'APK prompts differ from the editable catalog.'
-              assert not any(name.startswith(prefix + 'admin/') or '.local-admin/' in name for name in archive.namelist()), 'Local admin files must not be bundled.'
-              assert not any(name.startswith(prefix + 'assets/new-videos/') for name in archive.namelist()), 'Incoming originals must not be bundled.'
-              for architecture in ('armeabi-v7a', 'arm64-v8a'):
-                  archive.getinfo(f'lib/{architecture}/libflutter.so')
-              print(f'Verified {len(videos)} bundled videos and both phone architectures. APK: {apk.stat().st_size / 1_000_000:.1f} MB.')
           PY
+          python3 tools/verify_android.py build/app/outputs/flutter-apk/app-release.apk --report build/quality/apk.json
+          python3 tools/verify_android.py build/app/outputs/bundle/release/app-release.aab --report build/quality/aab.json
+          jarsigner -verify build/app/outputs/bundle/release/app-release.aab
+
+      - name: Measure Play compressed download size
+        run: |
+          curl -fL --retry 3 -o "$RUNNER_TEMP/bundletool.jar" https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar
+          echo 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29  '"$RUNNER_TEMP/bundletool.jar" | sha256sum --check
+          target_sdk=$(java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle=build/app/outputs/bundle/release/app-release.aab --xpath='/manifest/uses-sdk/@android:targetSdkVersion')
+          test "$target_sdk" -ge 36
+          keytool -genkeypair -keystore "$RUNNER_TEMP/bundle-check.jks" -storepass android -keypass android -alias check -keyalg RSA -validity 1 -dname 'CN=Temporary bundle size check'
+          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --bundle=build/app/outputs/bundle/release/app-release.aab --output="$RUNNER_TEMP/calm.apks" --ks="$RUNNER_TEMP/bundle-check.jks" --ks-pass=pass:android --ks-key-alias=check --key-pass=pass:android
+          java -jar "$RUNNER_TEMP/bundletool.jar" get-size total --apks="$RUNNER_TEMP/calm.apks" > build/quality/play-download.csv
+          python3 tools/check_play_download.py build/quality/play-download.csv > build/quality/play-download.json
+          cat build/quality/play-download.json
+
+      - name: Upload Play bundle and quality reports
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Calm-Reels-Play-bundle-${{ github.run_number }}
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            build/quality/
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Name APK for download
         id: package
@@ -211,7 +217,7 @@ jobs:
           path: ${{ steps.package.outputs.path }}
           archive: false
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
 
       - name: Add download link
         env:
@@ -237,9 +243,74 @@ jobs:
               Path(filename).unlink(missing_ok=True)
           PY
 
+  android-smoke:
+    name: Test native playback on 16 KB Android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out app
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Start 16 KB emulator
+        run: |
+          sudo chmod a+rw /dev/kvm
+          set +o pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          set -o pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'system-images;android-35;google_apis_ps16k;x86_64' 'emulator'
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd --name calm-16k --package 'system-images;android-35;google_apis_ps16k;x86_64' --device pixel_2
+          "$ANDROID_HOME/emulator/emulator" -avd calm-16k -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 4096 > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          adb wait-for-device
+          for attempt in $(seq 1 90); do
+            if [[ "$(adb shell getprop sys.boot_completed | tr -d '\r')" == 1 ]]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1
+          test "$(adb shell getconf PAGESIZE | tr -d '\r')" = 16384
+          adb shell input keyevent 82
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+      - name: Exercise native swipes and resource restoration
+        run: |
+          flutter config --jdk-dir "$JAVA_HOME"
+          flutter drive --profile --target=integration_test/performance_test.dart --driver=test_driver/performance_driver.dart --dart-define=CALM_PERF=true --dart-define=CALM_REQUIRE_16KB=true -d emulator-5554
+      - name: Collect actual OS background measurements
+        run: |
+          flutter build apk --release --target-platform android-x64 --build-number "$GITHUB_RUN_NUMBER"
+          python3 tools/profile_android.py --serial emulator-5554 --apk build/app/outputs/flutter-apk/app-release.apk --output build/performance/android-release.json
+      - name: Save test reports and emulator logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Calm-Reels-Android-performance-${{ github.run_number }}
+          path: |
+            build/performance/
+            build/integration_response_data.json
+            ${{ runner.temp }}/emulator.log
+          if-no-files-found: warn
+          retention-days: 1
+
   publish:
     name: Publish public APK download
-    needs: apk
+    needs: [apk, android-smoke]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && !github.event.repository.private
     runs-on: ubuntu-24.04
     timeout-minutes: 15

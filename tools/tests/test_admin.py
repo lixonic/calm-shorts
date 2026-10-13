@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from admin_server import AdminError, AdminServer, ContentStore
@@ -67,6 +68,26 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(sha256_file(self.root / self.entry["assetPath"]), before)
         self.assertEqual(self.store.trash()["items"], [])
         self.assertEqual(verify_bundle(self.root / "assets", 1), 0)
+
+    def test_media_budget_rejections_preserve_uploads_and_trash(self):
+        staging = self.root / '.local-admin/budget-upload'
+        staging.mkdir(parents=True)
+        source = staging / 'source.mp4'
+        shutil.copyfile(self.source, source)
+        before = self.store.library()
+        with patch('admin_server.MAX_MEDIA_BYTES', 1):
+            with self.assertRaisesRegex(AdminError, 'budget'):
+                self.store.upload_video(source, 'New.mp4')
+        self.assertEqual(self.store.library(), before)
+        self.assertTrue(source.exists())
+        self.store.remove('video', ['seed'])
+        trash = self.store.trash()
+        with patch('admin_server.MAX_MEDIA_BYTES', 1):
+            with self.assertRaisesRegex(AdminError, 'budget'):
+                self.store.restore([trash['items'][0]['id']])
+        self.assertEqual(self.store.trash(), trash)
+        self.assertEqual(self.store.library()['videos'], [])
+        self.assertFalse((self.root / 'assets/videos/seed.mp4').exists())
 
     def test_unknown_bulk_selection_does_not_partially_remove_files(self):
         with self.assertRaises(AdminError):

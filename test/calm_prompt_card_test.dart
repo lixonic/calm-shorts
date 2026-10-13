@@ -131,6 +131,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'listening stops on lifecycle changes without rebuilding the card',
+    (tester) async {
+      final sound = _Sound();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CalmPromptCard(
+            item: const PromptFeedItem(
+              CalmPrompt(
+                id: 'voice',
+                line: 'Count the hellos.',
+                activity: PromptActivity.voices,
+              ),
+            ),
+            sound: sound,
+            onContinue: () {},
+          ),
+        ),
+      );
+      await tester.tap(find.text('Listen'));
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      expect(sound.stops, greaterThan(0));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(sound.assets, hasLength(1));
+      expect(find.text('Listen'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   testWidgets('Continue stays available on a small screen with large text', (
     tester,
   ) async {

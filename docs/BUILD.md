@@ -59,7 +59,7 @@ Use this **`calm-reels` directory as the repository root** so `.github/workflows
 4. For a successful build on `main`, download [Calm-Reels.apk](https://github.com/lixonic/calm-shorts/releases/latest/download/Calm-Reels.apk) from the public release. No GitHub sign-in is required. The same link points to the latest successful build.
 5. Copy the APK to your Android phone, open it, and allow that file manager or browser to install the app when Android prompts you.
 
-The public release contains the APK directly and a SHA-256 checksum. Release downloads have no seven-day expiry. The workflow also retains an Actions copy for **7 days**; that copy requires GitHub sign-in. Builds on other branches and pull requests provide only the Actions copy. See [GitHub's release documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) and [artifact documentation](https://docs.github.com/en/actions/tutorials/store-and-share-data).
+The public release contains the APK directly and a SHA-256 checksum. Release downloads have no seven-day expiry. The workflow also retains an Actions copy for **1 day**; that copy requires GitHub sign-in. Builds on other branches and pull requests provide only the Actions copy. See [GitHub's release documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) and [artifact documentation](https://docs.github.com/en/actions/tutorials/store-and-share-data).
 
 The build uses Flutter **3.47.0** and pinned action commits. It installs Java 17 and uses the generated AGP 9.1.0 / Gradle 9.3.1 Android project to create one release-mode APK containing both 32-bit ARM and 64-bit ARM support for Android phones. These Gradle and Java versions match the [Android plugin compatibility requirements](https://developer.android.com/build/releases/agp-9-1-0-release-notes#compatibility). After a verified build on `main`, a separate job publishes the APK to GitHub Releases and updates the public download link. Only that publishing job has repository write permission. The workflow does not publish to Google Play.
 
@@ -121,7 +121,7 @@ The local output is `build/app/outputs/flutter-apk/app-release.apk`. Local build
 
 Byte-identical duplicate copies are skipped when adding videos. Individual clips and assembled edits both remain available. The original collection is unchanged; the app uses prepared copies and a catalog under `assets/`.
 
-The active portrait bundle contains **521.6 MB of videos** plus **5.2 MB of posters** and **0.2 MB of counting sounds**, about **527 MB total** before the app code and Android libraries are added. These are decimal MB. The preparation summary and manifest retain the initial compression measurements and original source mappings. The final APK size is measured after building.
+The active portrait bundle contains **456.0 MB of videos** plus **3.8 MB of posters** and **0.2 MB of counting sounds**, about **460 MB total** before the app code and Android libraries are added. These are decimal MB. The preparation summary and manifest retain the initial compression measurements and original source mappings. The final APK size is measured after building.
 
 | File or directory | Purpose |
 | --- | --- |
@@ -144,13 +144,13 @@ python3 tools/prepare_media.py \
 
 This bulk preparation command replaces the video catalog with the source catalog's selection; use the admin for routine additions and removals.
 
-Copies use H.264 video and preserve the original aspect ratio without cropping or upscaling. They are limited to 720 × 1280 for portrait and 1280 × 720 for landscape, with CRF 25 and a 1.8 Mbps video ceiling. The default encoding preset is `veryfast`; 29 previously verified copies made with `fast` were reused, while 295 use `veryfast`. The per-file manifest records each copy's actual settings. Existing audio is encoded as 96 kbps AAC; clips with no audio remain silent. To inspect the prepared bundle without needing any originals or performing another encode:
+Copies use H.264 video and preserve the original aspect ratio without cropping or upscaling. Portrait videos stay at 720 × 1280 or smaller. New preparations use the `fast` preset, CRF 27, a 1.4 Mbps ceiling, and 64 kbps AAC audio; silent clips stay silent. Smaller JPEG posters keep their original dimensions. The optimization pass kept 74 previous video copies when a new encode was larger, and used the smaller new copies for the other 260. All 334 originals remain available locally. The manifest records each copy's actual video settings and hashes. To verify the prepared bundle:
 
 ```bash
 python3 tools/prepare_media.py --verify-bundle
 ```
 
-Bundling every video makes the repository, build downloads, and installed app substantially larger than a typical player. Allow enough room on the phone for both the APK download and installation. GitHub Actions artifact storage is account-wide: the [included allowance depends on your GitHub plan](https://docs.github.com/en/actions/reference/limits#storage-limits-for-all-github-hosted-runners). The media bundle alone exceeds GitHub Free's 500 MB included artifact allowance, so check available storage or billing before running an APK build. Remove unneeded build artifacts after downloading them, or account for the storage in your GitHub plan.
+Bundling every video makes the repository, build downloads, and installed app substantially larger than a typical player. Allow enough room on the phone for both the APK download and installation. GitHub Actions artifact storage is account-wide: the [included allowance depends on your GitHub plan](https://docs.github.com/en/actions/reference/limits#storage-limits-for-all-github-hosted-runners). The APK and optional future-use Play bundle share that storage allowance, so check available storage or billing before repeated builds. Temporary build artifacts are retained for one day; public release downloads remain available. Remove unneeded build artifacts after downloading them, or account for the storage in your GitHub plan.
 
 The prepared files are tracked in ordinary Git; do not ignore `assets/videos/`. GitHub rejects individual ordinary Git files over 100 MiB. Future media that exceeds that size needs a different storage approach before it is committed. See [GitHub's large-file guidance](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github).
 
@@ -177,3 +177,9 @@ A prompt entry can include an activity:
 Keep instructions consistent with the selected activity. The count and aurora colors are chosen once for each occurrence in the session and retained when navigating back. Missing `activity` fields remain compatible and mean `notice`.
 
 The previous breathing-prompt collection was backed up locally at `.local-admin/backups/prompts-before-activities-20261013.json` when it was replaced. This backup is excluded from Git and APKs.
+
+## Performance and future Play bundle
+
+The current workflow also creates an AAB, checks its bundled content, and measures the largest compressed download with Google's pinned bundletool. This is a future-use build artifact; the current personal signing mode is for testing, and the workflow does not submit to Google Play. Both APK and AAB enforce project size budgets.
+
+Public APK publishing waits for native playback/resource tests on a 16 KB Android emulator. See [the performance guide](PERFORMANCE.md) for reports, physical-phone profiling commands, and the distinction between emulator compatibility tests and real-device performance measurements.

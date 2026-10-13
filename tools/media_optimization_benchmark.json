@@ -1,0 +1,52 @@
+[
+  {
+    "id": "b32b3d3f78998e3d",
+    "title": "Two unusual flower like insects with delicate white",
+    "beforeBytes": 180866,
+    "afterBytes": 186679,
+    "elapsedSeconds": 1.2,
+    "beforeSsim": 0.983795,
+    "afterSsim": 0.984589,
+    "reductionPercent": -3.2
+  },
+  {
+    "id": "00a372c8216c1128",
+    "title": "Tiny planet model",
+    "beforeBytes": 929362,
+    "afterBytes": 916655,
+    "elapsedSeconds": 3.98,
+    "beforeSsim": 0.990092,
+    "afterSsim": 0.990072,
+    "reductionPercent": 1.4
+  },
+  {
+    "id": "b24cac1d40cd5e1c",
+    "title": "Winter new 1",
+    "beforeBytes": 1372963,
+    "afterBytes": 1246755,
+    "elapsedSeconds": 3.71,
+    "beforeSsim": 0.979523,
+    "afterSsim": 0.981492,
+    "reductionPercent": 9.2
+  },
+  {
+    "id": "87a1336747cb1138",
+    "title": "Cozy indoor rabbit",
+    "beforeBytes": 1997980,
+    "afterBytes": 1565946,
+    "elapsedSeconds": 4.49,
+    "beforeSsim": 0.970474,
+    "afterSsim": 0.970415,
+    "reductionPercent": 21.6
+  },
+  {
+    "id": "82745841531de93d",
+    "title": "Recycle",
+    "beforeBytes": 11025942,
+    "afterBytes": 8592805,
+    "elapsedSeconds": 39.34,
+    "beforeSsim": 0.962566,
+    "afterSsim": 0.955875,
+    "reductionPercent": 22.1
+  }
+]

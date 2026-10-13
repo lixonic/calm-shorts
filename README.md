@@ -25,7 +25,7 @@ The app is designed for calm viewing and winding down. Its effect on sleep has n
 | Quiet pauses | **20** |
 | Counting, listening, and memory activities | **30** |
 | Default spacing | One pause after every **5 videos** |
-| Prepared media | About **527 MB**, before app code and Android libraries |
+| Prepared media | About **460 MB**, before app code and Android libraries |
 
 The original “45 minutes” describes the idea; the library has grown with new additions. Optional pauses add as much time as the child chooses to spend on them.
 
@@ -90,6 +90,6 @@ The APK carries its videos, prompts, and counting sounds with it. It works offli
 
 ## Build, verify, and maintain
 
-See [the build and content guide](docs/BUILD.md) for Android builds, signing keys, content imports, and reliable updates.
+See [the build and content guide](docs/BUILD.md) for Android builds, signing keys, content imports, and reliable updates. The [performance guide](docs/PERFORMANCE.md) covers memory cleanup, Android measurements, and automated size/alignment checks.
 
 The project tests video ordering, prompt loading, optional activity interactions, distinct backgrounds, audio stopping, small-screen layouts, and admin persistence. Bundle verification checks the videos, posters, and counting recordings; GitHub Actions also verifies the final APK's signature and packaged assets.

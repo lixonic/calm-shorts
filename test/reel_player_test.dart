@@ -22,6 +22,8 @@ void main() {
   late VideoPlayerPlatform previousPlatform;
 
   setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized()
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     previousPlatform = VideoPlayerPlatform.instance;
     platform = _VideoPlatform();
     VideoPlayerPlatform.instance = platform;
@@ -65,6 +67,13 @@ void main() {
       platform.initialize(id);
     }
     await tester.pump();
+    await tester.pump();
+  }
+
+  Future<void> flushDisposals(WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await Future<void>.delayed(Duration.zero);
+    });
     await tester.pump();
   }
 
@@ -279,6 +288,80 @@ void main() {
     await tester.pump();
     expect(finished, 0);
     expect(platform.players.values.single.playCount, 0);
+    await removePlayers(tester);
+  });
+
+  testWidgets('short hidden interval pauses without recreating the decoder', (
+    tester,
+  ) async {
+    await pumpPlayer(tester);
+    await initializePlayers(tester);
+    final id = platform.players.keys.single;
+    platform.players[id]!.position = const Duration(seconds: 3);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(platform.players[id]!.playing, isFalse);
+    expect(platform.disposedIds, isEmpty);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(platform.players, hasLength(1));
+    expect(platform.players[id]!.playing, isTrue);
+    expect(platform.players[id]!.seeks, isEmpty);
+    await removePlayers(tester);
+  });
+
+  testWidgets(
+    'hidden decoder releases without a redraw and restores position and options',
+    (tester) async {
+      await pumpPlayer(tester, paused: true, muted: false);
+      await initializePlayers(tester);
+      final first = platform.players.keys.single;
+      platform.players[first]!.position = const Duration(seconds: 3);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 3));
+      await flushDisposals(tester);
+      expect(platform.disposedIds, contains(first));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      final restored = platform.players.keys.last;
+      expect(restored, isNot(first));
+      platform.initialize(restored);
+      await tester.pump();
+      await tester.pump();
+      final player = platform.players[restored]!;
+      expect(player.position, const Duration(seconds: 3));
+      expect(player.playing, isFalse);
+      expect(player.volume, 1);
+      expect(player.seeks, [const Duration(seconds: 3)]);
+      await removePlayers(tester);
+    },
+  );
+
+  testWidgets('memory pressure recreates only the current decoder', (
+    tester,
+  ) async {
+    await pumpPlayer(tester);
+    await initializePlayers(tester);
+    final first = platform.players.keys.single;
+    platform.players[first]!.position = const Duration(seconds: 2);
+    tester.binding.handleMemoryPressure();
+    await tester.pump();
+    await flushDisposals(tester);
+    expect(platform.disposedIds, contains(first));
+    final restored = platform.players.keys.last;
+    platform.initialize(restored);
+    await tester.pump();
+    await tester.pump();
+    expect(platform.players[restored]!.playing, isTrue);
+    expect(platform.players[restored]!.position, const Duration(seconds: 2));
+    await pumpPlayer(tester, current: false, active: false);
+    tester.binding.handleMemoryPressure();
+    await tester.pump();
+    await flushDisposals(tester);
+    final count = platform.players.length;
+    expect(platform.disposedIds, contains(restored));
+    await tester.pump();
+    expect(platform.players, hasLength(count));
     await removePlayers(tester);
   });
 

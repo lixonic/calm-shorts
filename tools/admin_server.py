@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 import uuid
 
 from prepare_media import atomic_json, prepare_one, probe, sha256_file
+from verify_android import MAX_MEDIA_BYTES, bundled_media_bytes
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -147,6 +148,8 @@ class ContentStore:
             library = self.library()
             if any(v.get("sourceSha256") == source_hash for v in library["videos"]):
                 raise AdminError("This video was already uploaded.", 409)
+            if bundled_media_bytes(self.root) + prepared.stat().st_size + poster.stat().st_size > MAX_MEDIA_BYTES:
+                raise AdminError("The prepared collection would exceed the 461 MB offline media budget. Remove some videos before uploading more.", 409)
             target = self.asset(entry["assetPath"], "videos")
             target_poster = self.asset(entry["posterAssetPath"], "posters")
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -296,6 +299,8 @@ class ContentStore:
                                 source = folder / target.name
                                 if target.exists() or not source.is_file():
                                     raise AdminError("Cannot restore this file without overwriting another item.", 409)
+                                if bundled_media_bytes(self.root) + source.stat().st_size > MAX_MEDIA_BYTES:
+                                    raise AdminError("Restoring these videos would exceed the 461 MB offline media budget. Remove some videos first.", 409)
                                 target.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.move(str(source), target)
                                 moved.append((target, source))

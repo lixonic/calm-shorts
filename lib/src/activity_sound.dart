@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:video_player/video_player.dart';
 
+import 'playback_metrics.dart';
+
 abstract class ActivitySound {
   /// Completes when the short recording finishes or is stopped.
   Future<void> play(String asset);
@@ -23,6 +25,7 @@ class OfflineActivitySound implements ActivitySound {
     final controller = VideoPlayerController.asset(asset);
     final done = Completer<void>();
     _controller = controller;
+    PlaybackMetrics.opened();
     _done = done;
     void observe() {
       if (done.isCompleted) return;
@@ -58,6 +61,12 @@ class OfflineActivitySound implements ActivitySound {
     _controller = null;
     _done = null;
     if (done != null && !done.isCompleted) done.complete();
-    if (controller != null) await controller.dispose();
+    if (controller != null) {
+      try {
+        await controller.dispose();
+      } finally {
+        PlaybackMetrics.closed();
+      }
+    }
   }
 }

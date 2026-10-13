@@ -31,23 +31,24 @@ APP_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE_ROOT = APP_ROOT.parent
 DEFAULT_CATALOG = DEFAULT_SOURCE_ROOT / "catalog" / "video_catalog.json"
 ENCODING = {
-    "version": 1,
+    "version": 2,
     "videoCodec": "libx264",
     "pixelFormat": "yuv420p",
-    "crf": 25,
-    "preset": "veryfast",
-    "maxRateKbps": 1800,
-    "bufferSizeKbps": 3600,
+    "crf": 27,
+    "preset": "fast",
+    "maxRateKbps": 1400,
+    "bufferSizeKbps": 2800,
     "portraitMaxWidth": 720,
     "portraitMaxHeight": 1280,
     "landscapeMaxWidth": 1280,
     "landscapeMaxHeight": 720,
     "audioCodec": "aac",
-    "audioBitrateKbps": 96,
+    "audioBitrateKbps": 64,
     "maxAudioChannels": 2,
     "encoderThreads": 2,
     "posterMaxWidth": 240,
     "posterMaxHeight": 426,
+    "posterQuality": 8,
 }
 
 
@@ -211,7 +212,7 @@ def prepare_one(item: dict, source_root: Path, output_root: Path,
             run_command([
                 "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-threads", "1",
                 "-ss", str(poster_time), "-i", str(output), "-frames:v", "1",
-                "-vf", poster_filter, "-q:v", "5", "-threads", "1", str(partial_poster)
+                "-vf", poster_filter, "-q:v", str(ENCODING["posterQuality"]), "-threads", "1", str(partial_poster)
             ])
             if not partial_poster.is_file() or partial_poster.stat().st_size == 0:
                 raise RuntimeError(f"No poster generated for {video_id}")
