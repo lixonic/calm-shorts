@@ -108,7 +108,7 @@ def verify(path: Path, root: Path) -> dict:
         actual = {n for n in names if any(n.startswith(prefix + 'assets/' + folder + '/')
                   for folder in ('videos', 'posters', 'activities')) and not n.endswith('/')}
         if actual != expected:
-            raise ValueError('Packaged media does not match the catalog')
+            raise ValueError(f'Packaged media does not match the catalog; unexpected={sorted(actual - expected)}, missing={sorted(expected - actual)}')
         if json.loads(archive.read(prefix + 'assets/prompts.json')) != json.loads((root / 'assets/prompts.json').read_text()):
             raise ValueError('Packaged prompts differ')
         if any('.local-admin/' in n or n.startswith(prefix + ('admin/')) or n.startswith(prefix + 'assets/new-videos/') for n in names):
