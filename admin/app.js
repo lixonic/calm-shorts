@@ -73,7 +73,7 @@
     });
     return [...all].sort((a, b) => {
       const left = folder === 'trash' ? a.entry : a, right = folder === 'trash' ? b.entry : b;
-      if ($('sort').value === 'recent') return String(b.removedAt || right.addedAt || right.id).localeCompare(String(a.removedAt || left.addedAt || left.id));
+      if ($('sort').value === 'recent') return String(b.removedAt || right.addedAt || '').localeCompare(String(a.removedAt || left.addedAt || ''));
       if ($('sort').value === 'duration') return (right.durationSeconds || 0) - (left.durationSeconds || 0);
       return (left.title || left.line || '').localeCompare(right.title || right.line || '');
     });
